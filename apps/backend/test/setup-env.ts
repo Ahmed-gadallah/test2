@@ -1,0 +1,11 @@
+process.env.NODE_ENV = 'test';
+process.env.DATABASE_URL = process.env.TEST_DATABASE_URL ?? 'postgres://zaad:zaad@localhost:5432/zaad_test';
+process.env.JWT_ACCESS_SECRET = 'test-access-secret-0123456789abcdef0123';
+process.env.JWT_REFRESH_SECRET = 'test-refresh-secret-0123456789abcdef012';
+process.env.JWT_ADMIN_SECRET = 'test-admin-secret-0123456789abcdef01234';
+process.env.ERP_ADAPTER = 'mock';
+process.env.OTP_PROVIDER = 'console';
+process.env.OTP_DEV_FIXED_CODE = '123456';
+process.env.OTP_RESEND_COOLDOWN_SECONDS = '0';
+process.env.OTP_MAX_PER_HOUR = '100';
+process.env.BALANCE_CACHE_SECONDS = '30';
