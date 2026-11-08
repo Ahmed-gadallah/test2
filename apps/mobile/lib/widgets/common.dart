@@ -1,0 +1,180 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import '../core/config.dart';
+import '../core/error_text.dart';
+import '../core/format.dart';
+import '../core/theme.dart';
+import '../l10n/gen/app_localizations.dart';
+import '../state/providers.dart';
+
+extension Ctx on BuildContext {
+  AppLocalizations get t => AppLocalizations.of(this);
+  Fmt get fmt => Fmt(Localizations.localeOf(this).languageCode);
+  bool get ar => Localizations.localeOf(this).languageCode == 'ar';
+}
+
+/// Brand mark placeholder. The official Zaad logo asset must replace this
+/// (spec §4.1: do not invent or redesign the logo). Text only, no artwork.
+class BrandMark extends StatelessWidget {
+  final Color color;
+  final double size;
+  const BrandMark({super.key, this.color = ZaadColors.primary, this.size = 20});
+  @override
+  Widget build(BuildContext context) =>
+      Text(context.t.appName, style: TextStyle(color: color, fontSize: size, fontWeight: FontWeight.w700, letterSpacing: context.ar ? 0 : -0.2));
+}
+
+class DemoBanner extends StatelessWidget {
+  const DemoBanner({super.key});
+  @override
+  Widget build(BuildContext context) {
+    if (!AppConfig.isDemo) return const SizedBox.shrink();
+    return Material(
+      color: ZaadColors.warningSoft,
+      child: SafeArea(
+        bottom: false,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+          child: Row(children: [
+            const Icon(Icons.science_outlined, size: 16, color: ZaadColors.warning),
+            const SizedBox(width: 8),
+            Expanded(child: Text(context.t.demoBanner, style: const TextStyle(fontSize: 12, color: ZaadColors.warning, fontWeight: FontWeight.w500))),
+          ]),
+        ),
+      ),
+    );
+  }
+}
+
+class LoadingView extends StatelessWidget {
+  const LoadingView({super.key});
+  @override
+  Widget build(BuildContext context) => const Center(child: Padding(padding: EdgeInsets.all(32), child: CircularProgressIndicator(strokeWidth: 2.5)));
+}
+
+class EmptyView extends StatelessWidget {
+  final IconData icon;
+  final String text;
+  const EmptyView({super.key, required this.icon, required this.text});
+  @override
+  Widget build(BuildContext context) => Center(
+        child: Padding(
+          padding: const EdgeInsets.all(32),
+          child: Column(mainAxisSize: MainAxisSize.min, children: [
+            Container(
+              padding: const EdgeInsets.all(18),
+              decoration: const BoxDecoration(color: ZaadColors.primarySoft, shape: BoxShape.circle),
+              child: Icon(icon, size: 32, color: ZaadColors.primary),
+            ),
+            const SizedBox(height: 16),
+            Text(text, textAlign: TextAlign.center, style: const TextStyle(color: ZaadColors.textMuted, fontSize: 15, height: 1.5)),
+          ]),
+        ),
+      );
+}
+
+class ErrorView extends StatelessWidget {
+  final Object error;
+  final VoidCallback? onRetry;
+  const ErrorView({super.key, required this.error, this.onRetry});
+  @override
+  Widget build(BuildContext context) => Center(
+        child: Padding(
+          padding: const EdgeInsets.all(32),
+          child: Column(mainAxisSize: MainAxisSize.min, children: [
+            const Icon(Icons.cloud_off_rounded, size: 40, color: ZaadColors.textMuted),
+            const SizedBox(height: 12),
+            Text(errorText(context.t, error), textAlign: TextAlign.center, style: const TextStyle(fontSize: 15, height: 1.5)),
+            if (onRetry != null) ...[
+              const SizedBox(height: 16),
+              OutlinedButton.icon(
+                style: OutlinedButton.styleFrom(minimumSize: const Size(140, 44)),
+                onPressed: onRetry,
+                icon: const Icon(Icons.refresh_rounded),
+                label: Text(context.t.retry),
+              ),
+            ],
+          ]),
+        ),
+      );
+}
+
+/// Renders an AsyncValue with consistent loading / error+retry states.
+class AsyncBody<T> extends StatelessWidget {
+  final AsyncValue<T> value;
+  final Widget Function(T data) builder;
+  final VoidCallback onRetry;
+  const AsyncBody({super.key, required this.value, required this.builder, required this.onRetry});
+  @override
+  Widget build(BuildContext context) => switch (value) {
+        AsyncData(:final value) => builder(value),
+        AsyncError(:final error) => ErrorView(error: error, onRetry: onRetry),
+        _ => const LoadingView(),
+      };
+}
+
+class SectionTitle extends StatelessWidget {
+  final String text;
+  final Widget? trailing;
+  const SectionTitle(this.text, {super.key, this.trailing});
+  @override
+  Widget build(BuildContext context) => Padding(
+        padding: const EdgeInsets.fromLTRB(4, 8, 4, 10),
+        child: Row(children: [
+          Expanded(child: Text(text, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700))),
+          ?trailing,
+        ]),
+      );
+}
+
+class KeyValueRow extends StatelessWidget {
+  final String label;
+  final String value;
+  final bool bold;
+  final Color? valueColor;
+  /// Force left-to-right for phone numbers and signed amounts so RTL layout doesn't reorder them.
+  final bool ltr;
+  const KeyValueRow(this.label, this.value, {super.key, this.bold = false, this.valueColor, this.ltr = false});
+  @override
+  Widget build(BuildContext context) => Padding(
+        padding: const EdgeInsets.symmetric(vertical: 6),
+        child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Expanded(child: Text(label, style: const TextStyle(color: ZaadColors.textMuted, fontSize: 14))),
+          const SizedBox(width: 12),
+          Flexible(
+            child: Text(value,
+                textAlign: TextAlign.end, textDirection: ltr ? TextDirection.ltr : null, style: TextStyle(fontSize: bold ? 16 : 14, fontWeight: bold ? FontWeight.w700 : FontWeight.w500, color: valueColor)),
+          ),
+        ]),
+      );
+}
+
+class StatusChip extends StatelessWidget {
+  final String label;
+  final Color fg;
+  final Color bg;
+  const StatusChip(this.label, {super.key, required this.fg, required this.bg});
+  @override
+  Widget build(BuildContext context) => Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+        decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(20)),
+        child: Text(label, style: TextStyle(color: fg, fontSize: 12, fontWeight: FontWeight.w600)),
+      );
+}
+
+/// Bell icon with unread badge.
+class NotificationBell extends ConsumerWidget {
+  final VoidCallback onTap;
+  final Color color;
+  const NotificationBell({super.key, required this.onTap, this.color = Colors.white});
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final unread = ref.watch(notificationsProvider).value?.$2 ?? 0;
+    return IconButton(
+      onPressed: onTap,
+      tooltip: context.t.notificationsTitle,
+      icon: Badge(isLabelVisible: unread > 0, label: Text('$unread'), child: Icon(Icons.notifications_none_rounded, color: color)),
+    );
+  }
+}
