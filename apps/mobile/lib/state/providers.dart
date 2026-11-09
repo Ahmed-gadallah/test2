@@ -114,6 +114,7 @@ final biometricAvailableProvider = FutureProvider<bool>((_) async {
 final profileProvider = FutureProvider.autoDispose<Profile>((ref) => ref.watch(apiProvider).profile());
 final pointsProvider = FutureProvider.autoDispose<PointsBalance>((ref) => ref.watch(apiProvider).points());
 final offersProvider = FutureProvider.autoDispose<List<Offer>>((ref) => ref.watch(apiProvider).offers());
+final branchesProvider = FutureProvider.autoDispose<List<Branch>>((ref) => ref.watch(apiProvider).branches());
 final offerProvider = FutureProvider.autoDispose.family<Offer, String>((ref, id) => ref.watch(apiProvider).offer(id));
 final invoiceProvider = FutureProvider.autoDispose.family<InvoiceDetail, String>((ref, id) => ref.watch(apiProvider).invoice(id));
 final notificationsProvider = FutureProvider.autoDispose<(List<AppNotification>, int)>((ref) => ref.watch(apiProvider).notifications());

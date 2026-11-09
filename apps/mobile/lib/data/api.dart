@@ -34,6 +34,9 @@ abstract class ZaadApi {
   // offers & notifications
   Future<List<Offer>> offers();
   Future<Offer> offer(String id);
+
+  /// Active Zaad branches (Branch Locator). Public: works before login too.
+  Future<List<Branch>> branches();
   Future<(List<AppNotification>, int unread)> notifications();
   Future<void> markNotificationRead(String id);
   Future<void> markAllNotificationsRead();

@@ -973,6 +973,114 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Retry'**
   String get retry;
+
+  /// No description provided for @branchesTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Our Branches'**
+  String get branchesTitle;
+
+  /// No description provided for @branchesHomeSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Addresses, phone numbers and locations'**
+  String get branchesHomeSubtitle;
+
+  /// No description provided for @branchesSearchHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Search by name, city, district or address'**
+  String get branchesSearchHint;
+
+  /// No description provided for @branchesCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =0{No branches} =1{1 branch} other{{count} branches}}'**
+  String branchesCount(int count);
+
+  /// No description provided for @branchesNoResults.
+  ///
+  /// In en, this message translates to:
+  /// **'No branches match your search.'**
+  String get branchesNoResults;
+
+  /// No description provided for @branchesEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No branches are available right now.'**
+  String get branchesEmpty;
+
+  /// No description provided for @viewLocation.
+  ///
+  /// In en, this message translates to:
+  /// **'View location'**
+  String get viewLocation;
+
+  /// No description provided for @callBranch.
+  ///
+  /// In en, this message translates to:
+  /// **'Call branch'**
+  String get callBranch;
+
+  /// No description provided for @getDirections.
+  ///
+  /// In en, this message translates to:
+  /// **'Get directions'**
+  String get getDirections;
+
+  /// No description provided for @branchPhone.
+  ///
+  /// In en, this message translates to:
+  /// **'Branch phone'**
+  String get branchPhone;
+
+  /// No description provided for @branchPhoneHint.
+  ///
+  /// In en, this message translates to:
+  /// **'For calls and delivery'**
+  String get branchPhoneHint;
+
+  /// No description provided for @branchAddress.
+  ///
+  /// In en, this message translates to:
+  /// **'Address'**
+  String get branchAddress;
+
+  /// No description provided for @branchCity.
+  ///
+  /// In en, this message translates to:
+  /// **'City'**
+  String get branchCity;
+
+  /// No description provided for @branchDistrict.
+  ///
+  /// In en, this message translates to:
+  /// **'District'**
+  String get branchDistrict;
+
+  /// No description provided for @branchNotes.
+  ///
+  /// In en, this message translates to:
+  /// **'Notes'**
+  String get branchNotes;
+
+  /// No description provided for @phoneUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Phone number not available'**
+  String get phoneUnavailable;
+
+  /// No description provided for @locationUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Location not available'**
+  String get locationUnavailable;
+
+  /// No description provided for @clearSearch.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear search'**
+  String get clearSearch;
 }
 
 class _AppLocalizationsDelegate

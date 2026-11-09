@@ -487,4 +487,67 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get retry => 'Retry';
+
+  @override
+  String get branchesTitle => 'Our Branches';
+
+  @override
+  String get branchesHomeSubtitle => 'Addresses, phone numbers and locations';
+
+  @override
+  String get branchesSearchHint => 'Search by name, city, district or address';
+
+  @override
+  String branchesCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count branches',
+      one: '1 branch',
+      zero: 'No branches',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get branchesNoResults => 'No branches match your search.';
+
+  @override
+  String get branchesEmpty => 'No branches are available right now.';
+
+  @override
+  String get viewLocation => 'View location';
+
+  @override
+  String get callBranch => 'Call branch';
+
+  @override
+  String get getDirections => 'Get directions';
+
+  @override
+  String get branchPhone => 'Branch phone';
+
+  @override
+  String get branchPhoneHint => 'For calls and delivery';
+
+  @override
+  String get branchAddress => 'Address';
+
+  @override
+  String get branchCity => 'City';
+
+  @override
+  String get branchDistrict => 'District';
+
+  @override
+  String get branchNotes => 'Notes';
+
+  @override
+  String get phoneUnavailable => 'Phone number not available';
+
+  @override
+  String get locationUnavailable => 'Location not available';
+
+  @override
+  String get clearSearch => 'Clear search';
 }

@@ -1,4 +1,7 @@
+import 'dart:convert';
 import 'dart:math';
+
+import 'package:flutter/services.dart' show rootBundle;
 
 import 'api.dart';
 import 'models.dart';
@@ -191,6 +194,15 @@ class DemoZaadApi implements ZaadApi {
   Future<List<Offer>> offers() async {
     await _latency();
     return _offers;
+  }
+
+  /// Demo only: the branches file is generated from the real branches sheet by the backend's
+  /// `npm run export:branches-demo` (same parser as the import). API builds load GET /branches.
+  @override
+  Future<List<Branch>> branches() async {
+    await _latency();
+    final list = jsonDecode(await rootBundle.loadString('assets/demo/branches.json')) as List;
+    return list.map((j) => Branch.fromJson(j as Map<String, dynamic>)).toList();
   }
 
   @override

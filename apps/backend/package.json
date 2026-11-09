@@ -10,6 +10,7 @@
     "db:migrate": "node --env-file-if-exists=.env dist/db/migrate.js",
     "seed:admin": "node --env-file-if-exists=.env dist/scripts/create-admin.js",
     "import:branches": "node --env-file-if-exists=.env dist/scripts/import-branches.js",
+    "export:branches-demo": "node dist/scripts/export-branches-demo.js",
     "test": "jest --runInBand",
     "typecheck": "tsc --noEmit"
   },

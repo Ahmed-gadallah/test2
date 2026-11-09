@@ -480,4 +480,70 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get retry => 'إعادة المحاولة';
+
+  @override
+  String get branchesTitle => 'فروع زاد';
+
+  @override
+  String get branchesHomeSubtitle => 'العناوين وأرقام التواصل ومواقع الفروع';
+
+  @override
+  String get branchesSearchHint => 'ابحث بالاسم أو المدينة أو الحي أو العنوان';
+
+  @override
+  String branchesCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count فرع',
+      many: '$count فرعًا',
+      few: '$count فروع',
+      two: 'فرعان',
+      one: 'فرع واحد',
+      zero: 'لا توجد فروع',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get branchesNoResults => 'لا توجد فروع مطابقة لبحثك.';
+
+  @override
+  String get branchesEmpty => 'لا توجد فروع متاحة حاليًا.';
+
+  @override
+  String get viewLocation => 'عرض الموقع';
+
+  @override
+  String get callBranch => 'اتصال بالفرع';
+
+  @override
+  String get getDirections => 'الاتجاهات';
+
+  @override
+  String get branchPhone => 'رقم الفرع';
+
+  @override
+  String get branchPhoneHint => 'للاتصال والتوصيل';
+
+  @override
+  String get branchAddress => 'العنوان';
+
+  @override
+  String get branchCity => 'المدينة';
+
+  @override
+  String get branchDistrict => 'الحي';
+
+  @override
+  String get branchNotes => 'ملاحظات';
+
+  @override
+  String get phoneUnavailable => 'رقم الهاتف غير متوفر';
+
+  @override
+  String get locationUnavailable => 'الموقع غير متوفر';
+
+  @override
+  String get clearSearch => 'مسح البحث';
 }

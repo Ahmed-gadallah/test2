@@ -297,3 +297,93 @@ class PageResult<T> {
   final String? nextCursor;
   const PageResult(this.items, this.nextCursor);
 }
+
+/// A Zaad branch from the backend branch directory (imported from the branches sheet).
+/// Only active branches ever reach the app. ONE phone per branch (calls and delivery).
+/// Optional fields are null when the sheet left them empty; the UI hides what is missing.
+class Branch {
+  final int id;
+  final String nameAr;
+  final String? nameEn;
+  final String city;
+  final String? district;
+  final String addressAr;
+  final String? addressEn;
+  final String? phone;
+  final String? mapsUrl;
+  final String? notes;
+  Branch({
+    required this.id,
+    required this.nameAr,
+    this.nameEn,
+    required this.city,
+    this.district,
+    required this.addressAr,
+    this.addressEn,
+    this.phone,
+    this.mapsUrl,
+    this.notes,
+  });
+
+  /// English falls back to Arabic when the sheet has no English value (nothing is translated or invented).
+  String name(bool ar) => ar || (nameEn ?? '').isEmpty ? nameAr : nameEn!;
+  String address(bool ar) => ar || (addressEn ?? '').isEmpty ? addressAr : addressEn!;
+
+  /// "City · District", without repeating the district when the sheet uses the same value for both.
+  String place() => [city, if (district != null && district != city) district!].join(' · ');
+
+  /// Address line for cards. Null when it only repeats the district/city already shown in [place].
+  String? extraAddress(bool ar) {
+    final a = address(ar);
+    if (ar && (a == district || a == city)) return null;
+    return a;
+  }
+
+  Uri? get telUri => phone == null ? null : Uri(scheme: 'tel', path: phone);
+  Uri? get mapsUri {
+    final u = mapsUrl == null ? null : Uri.tryParse(mapsUrl!);
+    return u != null && u.scheme == 'https' ? u : null;
+  }
+
+  late final String _haystack = normalizeSearch([nameAr, nameEn, city, district, addressAr, addressEn].whereType<String>().join(' '));
+
+  /// Search by name (Arabic/English), city, district or address. Every word typed must appear.
+  bool matches(String query) {
+    final words = normalizeSearch(query).split(' ').where((w) => w.isNotEmpty);
+    return words.every(_haystack.contains);
+  }
+
+  factory Branch.fromJson(Map<String, dynamic> j) => Branch(
+        id: (j['id'] as num).toInt(),
+        nameAr: j['nameAr'] as String,
+        nameEn: j['nameEn'] as String?,
+        city: j['city'] as String,
+        district: j['district'] as String?,
+        addressAr: j['addressAr'] as String,
+        addressEn: j['addressEn'] as String?,
+        phone: j['phone'] as String?,
+        mapsUrl: j['mapsUrl'] as String?,
+        notes: j['notes'] as String?,
+      );
+}
+
+/// Folds the spelling differences people type in Arabic search (أ/إ/آ→ا, ة→ه, ى→ي, ؤ→و, ئ→ي),
+/// removes diacritics and tatweel, converts Arabic-Indic digits and lowercases Latin text.
+String normalizeSearch(String s) {
+  final b = StringBuffer();
+  for (final r in s.toLowerCase().runes) {
+    if ((r >= 0x064B && r <= 0x0652) || r == 0x0640 || r == 0x0670) continue;
+    final c = switch (r) {
+      0x0623 || 0x0625 || 0x0622 || 0x0671 => 0x0627,
+      0x0629 => 0x0647,
+      0x0649 => 0x064A,
+      0x0624 => 0x0648,
+      0x0626 => 0x064A,
+      >= 0x0660 && <= 0x0669 => r - 0x0660 + 0x30,
+      >= 0x06F0 && <= 0x06F9 => r - 0x06F0 + 0x30,
+      _ => r,
+    };
+    b.writeCharCode(c);
+  }
+  return b.toString().replaceAll(RegExp(r'[\s\-_,.،/]+'), ' ').trim();
+}

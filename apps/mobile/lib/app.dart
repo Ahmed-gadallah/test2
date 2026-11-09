@@ -7,6 +7,7 @@ import 'core/theme.dart';
 import 'data/models.dart';
 import 'features/auth/auth_screens.dart';
 import 'features/auth/welcome_screen.dart';
+import 'features/branches/branches_screens.dart';
 import 'features/home/home_screen.dart';
 import 'features/invoices/invoice_screens.dart';
 import 'features/notifications/notifications_screen.dart';
@@ -64,6 +65,8 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/invoices/:id', builder: (_, s) => InvoiceDetailScreen(id: s.pathParameters['id']!)),
       GoRoute(path: '/offers/:id', builder: (_, s) => OfferDetailScreen(id: s.pathParameters['id']!)),
       GoRoute(path: '/notifications', builder: (_, _) => const NotificationsScreen()),
+      GoRoute(path: '/branches', builder: (_, _) => const BranchesScreen()),
+      GoRoute(path: '/branches/:id', builder: (_, s) => BranchDetailScreen(id: int.tryParse(s.pathParameters['id']!) ?? -1)),
       GoRoute(path: '/redemption/:id', builder: (_, s) => RedemptionScreen(id: s.pathParameters['id']!)),
     ],
   );

@@ -58,6 +58,8 @@ class HomeScreen extends ConsumerWidget {
                     const FadeSlideIn(index: 2, child: _QuickActions()),
                     const SizedBox(height: ZaadSpace.md),
                     const FadeSlideIn(index: 3, child: ShopOnlineCard()),
+                    const SizedBox(height: ZaadSpace.md),
+                    const FadeSlideIn(index: 3, child: BranchesEntryCard()),
                     const SizedBox(height: ZaadSpace.lg),
                     FadeSlideIn(
                       index: 4,
@@ -526,6 +528,34 @@ class QuickActionCard extends StatelessWidget {
             ),
           ),
         ),
+      ],
+    ),
+  );
+}
+
+/// Entry to the Branch Locator (فروع زاد).
+class BranchesEntryCard extends StatelessWidget {
+  const BranchesEntryCard({super.key});
+  @override
+  Widget build(BuildContext context) => SurfaceCard(
+    key: const Key('branches-entry'),
+    onTap: () => context.push('/branches'),
+    padding: const EdgeInsets.all(14),
+    child: Row(
+      children: [
+        const IconTile(Icons.storefront_rounded, size: 56),
+        const SizedBox(width: 14),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(context.t.branchesTitle, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16)),
+              const SizedBox(height: 2),
+              Text(context.t.branchesHomeSubtitle, style: const TextStyle(color: ZaadColors.textMuted, fontSize: 13)),
+            ],
+          ),
+        ),
+        const Icon(Icons.chevron_right_rounded, color: ZaadColors.textMuted),
       ],
     ),
   );

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../core/config.dart';
 import '../../core/error_text.dart';
@@ -119,6 +120,7 @@ class _ProfileState extends ConsumerState<ProfileScreen> {
               subtitle: bioAvailable ? null : t.biometricUnavailable,
               trailing: Switch(value: bio && bioAvailable, onChanged: bioAvailable ? (v) => ref.read(biometricProvider.notifier).set(v) : null),
             ),
+            InfoRow(icon: Icons.storefront_outlined, title: t.branchesTitle, onTap: () => context.push('/branches')),
             ExternalLink(
               uri: onlineStoreUri,
               builder: (open) => InfoRow(

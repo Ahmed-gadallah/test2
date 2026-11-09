@@ -30,6 +30,7 @@ flutter:
   generate: true
   assets:
     - assets/brand/zaad_logo.png
+    - assets/demo/branches.json
   fonts:
     - family: IBMPlexSansArabic
       fonts:

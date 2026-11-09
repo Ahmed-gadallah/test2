@@ -152,6 +152,9 @@ class HttpZaadApi implements ZaadApi {
   Future<Offer> offer(String id) async => Offer.fromJson(_data(await _call(() => _dio.get('/offers/$id'))));
 
   @override
+  Future<List<Branch>> branches() async => _list(await _call(() => _dio.get('/branches'))).map(Branch.fromJson).toList();
+
+  @override
   Future<(List<AppNotification>, int)> notifications() async {
     final b = await _call(() => _dio.get('/notifications', queryParameters: {'limit': 50}));
     return (_list(b).map(AppNotification.fromJson).toList(), (b['meta'] as Map)['unread'] as int);
