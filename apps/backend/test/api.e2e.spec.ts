@@ -434,3 +434,38 @@ describe('security hardening', () => {
     await ctx.http().get(`${P}/customer/points`).set(auth(forged)).expect(401);
   });
 });
+
+// ─── Admin dashboard endpoints ──────────────────────────────────────────────
+describe('admin dashboard endpoints', () => {
+  it('me + dashboard counters are available to every role', async () => {
+    for (const role of ['super_admin', 'marketing_admin', 'customer_support'] as const) {
+      const t = await createAdmin(ctx, role);
+      const me = await ctx.http().get(`${P}/admin/me`).set(auth(t)).expect(200);
+      expect(me.body.data.role).toBe(role);
+      const d = await ctx.http().get(`${P}/admin/dashboard`).set(auth(t)).expect(200);
+      expect(d.body.data).toHaveProperty('offersActive');
+    }
+  });
+
+  it('support can open an invoice; marketing cannot', async () => {
+    const s = await createAdmin(ctx, 'customer_support');
+    const r = await ctx.http().get(`${P}/admin/customers/900001/invoices/900001-1000`).set(auth(s)).expect(200);
+    expect(r.body.data.lines.length).toBeGreaterThan(0);
+    await ctx.http().get(`${P}/admin/customers/900001/invoices/900002-1000`).set(auth(s)).expect(404);
+    const m = await createAdmin(ctx, 'marketing_admin');
+    await ctx.http().get(`${P}/admin/customers/900001/invoices/900001-1000`).set(auth(m)).expect(403);
+  });
+
+  it('super admin can change roles and deactivate others, but not lock themselves out', async () => {
+    const s = await createAdmin(ctx, 'super_admin');
+    const m = await createAdmin(ctx, 'marketing_admin');
+    const list = await ctx.http().get(`${P}/admin/admins`).set(auth(s)).expect(200);
+    const mkt = list.body.data.find((x: { role: string }) => x.role === 'marketing_admin');
+    const me = list.body.data.find((x: { role: string }) => x.role === 'super_admin');
+    await ctx.http().patch(`${P}/admin/admins/${mkt.id}`).set(auth(s)).send({ active: false }).expect(200);
+    await ctx.http().get(`${P}/admin/offers`).set(auth(m)).expect(401); // deactivation is immediate
+    await ctx.http().patch(`${P}/admin/admins/${me.id}`).set(auth(s)).send({ role: 'customer_support' }).expect(403);
+    await ctx.http().patch(`${P}/admin/admins/${me.id}`).set(auth(s)).send({ active: false }).expect(403);
+    await ctx.http().patch(`${P}/admin/admins/${me.id}`).set(auth(m)).send({ active: true }).expect(401);
+  });
+});

@@ -1,13 +1,13 @@
-import { Body, Controller, Get, HttpStatus, Inject, Param, Post, Query, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, HttpStatus, Inject, Param, ParseUUIDPipe, Patch, Post, Query, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiProperty, ApiTags } from '@nestjs/swagger';
-import { IsEmail, IsIn, IsOptional, IsString, Length, Matches, MaxLength } from 'class-validator';
+import { IsBoolean, IsEmail, IsIn, IsOptional, IsString, Length, Matches, MaxLength } from 'class-validator';
 import { desc, eq, sql } from 'drizzle-orm';
 import { AuditService } from '../audit/audit.service';
 import { AppError } from '../common/errors';
 import { normalizeSaudiMobile } from '../common/phone';
 import { fromErp, PageQuery } from '../customer/customer.controller';
 import { DB, Db } from '../db/db.module';
-import { adminUsers, auditLogs, redemptionRequests, users } from '../db/schema';
+import { adminUsers, auditLogs, offers, redemptionRequests, users } from '../db/schema';
 import { ErpAdapter } from '../erp/erp.adapter';
 import { toView } from '../redemption/redemption.service';
 import { AdminGuard, AdminPrincipal, CurrentAdmin, hashAdminPassword, Roles } from './admin-auth';
@@ -31,6 +31,18 @@ class CreateAdminDto {
   role: 'super_admin' | 'marketing_admin' | 'customer_support';
 }
 
+class UpdateAdminDto {
+  @ApiProperty({ required: false, enum: ['super_admin', 'marketing_admin', 'customer_support'] })
+  @IsOptional()
+  @IsIn(['super_admin', 'marketing_admin', 'customer_support'])
+  role?: 'super_admin' | 'marketing_admin' | 'customer_support';
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsBoolean()
+  active?: boolean;
+}
+
 /**
  * Customer Support is READ-ONLY by construction: there is no endpoint here that
  * modifies customer records, points, invoices or redemptions — for any role.
@@ -46,14 +58,40 @@ export class AdminController {
     private readonly audit: AuditService,
   ) {}
 
+  @Get('me')
+  @Roles('super_admin', 'marketing_admin', 'customer_support')
+  async me(@CurrentAdmin() a: AdminPrincipal) {
+    const [me] = await this.db.select({ id: adminUsers.id, name: adminUsers.name, email: adminUsers.email, role: adminUsers.role }).from(adminUsers).where(eq(adminUsers.id, a.adminId));
+    return { data: me };
+  }
+
   @Get('dashboard')
   @Roles('super_admin', 'marketing_admin', 'customer_support')
   async dashboard() {
+    const [[o]] = await Promise.all([
+      this.db
+        .select({
+          active: sql<number>`count(*) filter (where status in ('active','scheduled') and start_at <= now() and end_at > now())::int`,
+          scheduled: sql<number>`count(*) filter (where status = 'scheduled' and start_at > now())::int`,
+          drafts: sql<number>`count(*) filter (where status = 'draft')::int`,
+        })
+        .from(offers),
+    ]);
     const [[u], [r]] = await Promise.all([
       this.db.select({ total: sql<number>`count(*)::int`, last7d: sql<number>`count(*) filter (where created_at > now() - interval '7 days')::int` }).from(users),
       this.db.select({ pending: sql<number>`count(*) filter (where status = 'pending')::int`, completed: sql<number>`count(*) filter (where status = 'completed')::int` }).from(redemptionRequests),
     ]);
-    return { data: { registeredCustomers: u.total, newCustomers7d: u.last7d, redemptionsPending: r.pending, redemptionsCompleted: r.completed } };
+    return {
+      data: {
+        registeredCustomers: u.total,
+        newCustomers7d: u.last7d,
+        redemptionsPending: r.pending,
+        redemptionsCompleted: r.completed,
+        offersActive: o.active,
+        offersScheduled: o.scheduled,
+        offersDraft: o.drafts,
+      },
+    };
   }
 
   @Get('customers')
@@ -95,6 +133,17 @@ export class AdminController {
     return { data: page.items, meta: { nextCursor: page.nextCursor } };
   }
 
+  @Get('customers/:erpCustomerId/invoices/:invoiceId')
+  @Roles('super_admin', 'customer_support')
+  async invoice(@CurrentAdmin() a: AdminPrincipal, @Param('erpCustomerId') id: string, @Param('invoiceId') invoiceId: string) {
+    assertErpId(id);
+    if (!/^[\w-]{1,64}$/.test(invoiceId)) throw new AppError('NOT_FOUND', HttpStatus.NOT_FOUND);
+    await this.audit.log({ actorType: 'admin', actorId: a.adminId, action: 'customer.view_invoice', resourceType: 'invoice', resourceId: invoiceId, metadata: { erpCustomerId: id } });
+    const inv = await fromErp(() => this.erp.getInvoice(id, invoiceId));
+    if (!inv) throw new AppError('NOT_FOUND', HttpStatus.NOT_FOUND);
+    return { data: inv };
+  }
+
   @Get('redemptions')
   @Roles('super_admin', 'customer_support')
   async redemptions() {
@@ -125,5 +174,25 @@ export class AdminController {
       .returning({ id: adminUsers.id, name: adminUsers.name, email: adminUsers.email, role: adminUsers.role });
     await this.audit.log({ actorType: 'admin', actorId: a.adminId, action: 'admin.created', resourceType: 'admin', resourceId: created.id, metadata: { role: dto.role } });
     return { data: created };
+  }
+
+  @Patch('admins/:id')
+  @Roles('super_admin')
+  async updateAdmin(@CurrentAdmin() a: AdminPrincipal, @Param('id', ParseUUIDPipe) id: string, @Body() dto: UpdateAdminDto) {
+    // A super admin cannot lock themselves out (demote or deactivate their own account).
+    if (id === a.adminId && (dto.active === false || (dto.role && dto.role !== 'super_admin'))) {
+      throw new AppError('FORBIDDEN', HttpStatus.FORBIDDEN, 'You cannot demote or deactivate your own account');
+    }
+    const patch: Partial<typeof adminUsers.$inferInsert> = { updatedAt: new Date() };
+    if (dto.role) patch.role = dto.role;
+    if (dto.active !== undefined) patch.active = dto.active;
+    const [updated] = await this.db
+      .update(adminUsers)
+      .set(patch)
+      .where(eq(adminUsers.id, id))
+      .returning({ id: adminUsers.id, name: adminUsers.name, email: adminUsers.email, role: adminUsers.role, active: adminUsers.active });
+    if (!updated) throw new AppError('NOT_FOUND', HttpStatus.NOT_FOUND);
+    await this.audit.log({ actorType: 'admin', actorId: a.adminId, action: 'admin.updated', resourceType: 'admin', resourceId: id, metadata: { ...dto } });
+    return { data: updated };
   }
 }
