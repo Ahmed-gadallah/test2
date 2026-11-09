@@ -1,0 +1,571 @@
+openapi: 3.1.0
+info:
+  title: Zaad ERP Integration API (Proposed Contract)
+  version: 0.1.0-proposal
+  summary: Proposed server-to-server API between the Zaad customer-app backend and the ERP/POS.
+  description: |
+    **Status: PROPOSAL from Zaad Pharmacies. Nothing here exists in the ERP yet.**
+    The vendor may adopt it as-is or propose changes; field meanings matter more than names.
+
+    Principles:
+    - The ERP is the only source of truth for customers, invoices and **all** loyalty arithmetic.
+      The Zaad backend never calculates, deducts or adjusts points.
+    - Server-to-server only (the mobile app never calls the ERP). HTTPS only.
+    - Credentials are scoped to **Workspace 0 (Zaad)**. There is no workspace parameter; the ERP
+      derives it from the credentials and must never return another workspace's data.
+    - Every customer-scoped call is filtered by `customerId`. A resource belonging to another customer
+      must return `404`, never the data.
+    - Times are ISO-8601 with offset (UTC preferred). Money is a decimal number in SAR with 2 decimals.
+    - Field hints `x-erp-source` show which current database column we believe holds the value.
+
+    Program rules confirmed by Zaad: 1 point per SAR earned; 50 points = 1 SAR when redeeming;
+    redemption in whole SAR only (multiples of 50 points).
+  contact:
+    name: Zaad Pharmacies — app team
+  license:
+    name: Proprietary — Zaad Pharmacies, shared with the ERP vendor for this integration only
+    identifier: LicenseRef-Proprietary
+servers:
+  - url: https://{erpHost}/api/zaad/v1
+    description: Staging first, then production (separate hosts and credentials)
+    variables:
+      erpHost:
+        default: erp-staging.example.com
+security:
+  - oauth2: []
+tags:
+  - name: Customers
+    description: Customer lookup and profile (read-only).
+  - name: Loyalty
+    description: Points balance and ledger (read-only; the ERP owns all arithmetic).
+  - name: Invoices
+    description: Invoices across all branches (read-only).
+  - name: Branches
+    description: Branch reference data.
+  - name: Redemption
+    description: New feature — cashier-initiated, customer-approved redemption.
+
+paths:
+  /customers:
+    get:
+      tags: [Customers]
+      operationId: findCustomersByMobile
+      summary: Find customers by mobile number
+      description: |
+        Returns **all** matching records (not only the first). The Zaad backend blocks registration
+        when more than one record matches, and when `accountType` is `institutional`.
+        The ERP should match on the normalized number (`+9665XXXXXXXX`) regardless of how it was stored.
+      security: [{ oauth2: [zaad.read] }]
+      parameters:
+        - name: mobile
+          in: query
+          required: true
+          schema: { type: string, pattern: '^\+9665\d{8}$', example: '+966500000001' }
+      responses:
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '200':
+          description: Zero or more matches
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items]
+                properties:
+                  items: { type: array, items: { $ref: '#/components/schemas/Customer' } }
+        default: { $ref: '#/components/responses/Error' }
+
+  /customers/{customerId}:
+    get:
+      tags: [Customers]
+      operationId: getCustomer
+      summary: Customer profile
+      security: [{ oauth2: [zaad.read] }]
+      parameters: [{ $ref: '#/components/parameters/CustomerId' }]
+      responses:
+        '200':
+          description: Customer
+          content: { application/json: { schema: { $ref: '#/components/schemas/Customer' } } }
+        '404': { $ref: '#/components/responses/NotFound' }
+        default: { $ref: '#/components/responses/Error' }
+
+  /customers/{customerId}/points:
+    get:
+      tags: [Loyalty]
+      operationId: getPointsBalance
+      summary: Current points balance
+      security: [{ oauth2: [zaad.read] }]
+      parameters: [{ $ref: '#/components/parameters/CustomerId' }]
+      responses:
+        '200':
+          description: Live balance
+          content: { application/json: { schema: { $ref: '#/components/schemas/PointsBalance' } } }
+        '404': { $ref: '#/components/responses/NotFound' }
+        default: { $ref: '#/components/responses/Error' }
+
+  /customers/{customerId}/points/ledger:
+    get:
+      tags: [Loyalty]
+      operationId: getPointsLedger
+      summary: Structured points ledger, newest first
+      description: |
+        Replaces the free-text `customer_timeline_0.log`. Must include earned, redeemed, refund
+        adjustments and manual edits. Staff names must not be included.
+      security: [{ oauth2: [zaad.read] }]
+      parameters:
+        - $ref: '#/components/parameters/CustomerId'
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          description: One page of entries
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Page'
+                  - type: object
+                    properties:
+                      items: { type: array, items: { $ref: '#/components/schemas/PointsEntry' } }
+        '404': { $ref: '#/components/responses/NotFound' }
+        default: { $ref: '#/components/responses/Error' }
+
+  /customers/{customerId}/invoices:
+    get:
+      tags: [Invoices]
+      operationId: listInvoices
+      summary: Customer invoices across all branches, newest first
+      security: [{ oauth2: [zaad.read] }]
+      parameters:
+        - $ref: '#/components/parameters/CustomerId'
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/Limit'
+        - name: status
+          in: query
+          required: false
+          description: Comma-separated filter. Default = finished,refunded,partially_refunded.
+          schema: { type: string, example: 'finished,refunded,partially_refunded' }
+      responses:
+        '200':
+          description: One page of invoices
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Page'
+                  - type: object
+                    properties:
+                      items: { type: array, items: { $ref: '#/components/schemas/InvoiceSummary' } }
+        '404': { $ref: '#/components/responses/NotFound' }
+        default: { $ref: '#/components/responses/Error' }
+
+  /customers/{customerId}/invoices/{invoiceId}:
+    get:
+      tags: [Invoices]
+      operationId: getInvoice
+      summary: Invoice details
+      description: Must return 404 when the invoice does not exist **or belongs to another customer**.
+      security: [{ oauth2: [zaad.read] }]
+      parameters:
+        - $ref: '#/components/parameters/CustomerId'
+        - name: invoiceId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Invoice with lines
+          content: { application/json: { schema: { $ref: '#/components/schemas/InvoiceDetail' } } }
+        '404': { $ref: '#/components/responses/NotFound' }
+        default: { $ref: '#/components/responses/Error' }
+
+  /branches:
+    get:
+      tags: [Branches]
+      operationId: listBranches
+      summary: Active Zaad branches
+      security: [{ oauth2: [zaad.read] }]
+      responses:
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '200':
+          description: Branches
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items]
+                properties:
+                  items: { type: array, items: { $ref: '#/components/schemas/Branch' } }
+        default: { $ref: '#/components/responses/Error' }
+
+  /customers/{customerId}/redemptions:
+    get:
+      tags: [Redemption]
+      operationId: listCustomerRedemptions
+      summary: Redemption requests for a customer (used as a fallback when a webhook is missed)
+      security: [{ oauth2: [zaad.redemption] }]
+      parameters:
+        - $ref: '#/components/parameters/CustomerId'
+        - name: status
+          in: query
+          schema: { $ref: '#/components/schemas/RedemptionStatus' }
+          example: pending
+      responses:
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '200':
+          description: Requests (pending ones must reflect expiry in real time)
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items]
+                properties:
+                  items: { type: array, items: { $ref: '#/components/schemas/RedemptionRequest' } }
+        default: { $ref: '#/components/responses/Error' }
+
+  /redemptions/{requestId}:
+    get:
+      tags: [Redemption]
+      operationId: getRedemption
+      summary: One redemption request with its current status
+      security: [{ oauth2: [zaad.redemption] }]
+      parameters: [{ $ref: '#/components/parameters/RequestId' }]
+      responses:
+        '200':
+          description: Request
+          content: { application/json: { schema: { $ref: '#/components/schemas/RedemptionRequest' } } }
+        '404': { $ref: '#/components/responses/NotFound' }
+        default: { $ref: '#/components/responses/Error' }
+
+  /redemptions/{requestId}/decision:
+    post:
+      tags: [Redemption]
+      operationId: decideRedemption
+      summary: Send the customer's approve / reject decision
+      description: |
+        **Idempotent on `Idempotency-Key`:** repeating the same key returns the same result and never
+        deducts twice. On `approve` the ERP re-checks expiry and the **live** balance, then deducts and
+        completes the request. On `reject` or expiry nothing is deducted. Concurrent calls for the same
+        request must be serialized by the ERP.
+      security: [{ oauth2: [zaad.redemption] }]
+      parameters:
+        - $ref: '#/components/parameters/RequestId'
+        - name: Idempotency-Key
+          in: header
+          required: true
+          schema: { type: string, maxLength: 128, example: 'RR-8F2K1:approve' }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [customerId, decision]
+              properties:
+                customerId: { type: string, description: 'Must own the request; otherwise 404' }
+                decision: { type: string, enum: [approve, reject] }
+      responses:
+        '200':
+          description: Final state after the decision (completed / rejected / failed)
+          content: { application/json: { schema: { $ref: '#/components/schemas/RedemptionRequest' } } }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409':
+          description: Already decided — body carries the current request
+          content: { application/json: { schema: { $ref: '#/components/schemas/ErrorWithRequest' } } }
+        '410':
+          description: Expired — nothing deducted
+          content: { application/json: { schema: { $ref: '#/components/schemas/ErrorWithRequest' } } }
+        '422':
+          description: Insufficient live balance — nothing deducted, request becomes `failed`
+          content: { application/json: { schema: { $ref: '#/components/schemas/ErrorWithRequest' } } }
+        default: { $ref: '#/components/responses/Error' }
+
+webhooks:
+  redemption.created:
+    post:
+      operationId: onRedemptionCreated
+      summary: Cashier created a pending redemption request (most important event)
+      description: Sent immediately so the customer's phone can show the approval screen.
+      parameters: [{ $ref: '#/components/parameters/WebhookSignature' }, { $ref: '#/components/parameters/WebhookTimestamp' }]
+      requestBody:
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/RedemptionEvent' }
+      responses: { '200': { description: Received } }
+  redemption.updated:
+    post:
+      operationId: onRedemptionUpdated
+      summary: Request reached a final state (completed / rejected / expired / failed)
+      parameters: [{ $ref: '#/components/parameters/WebhookSignature' }, { $ref: '#/components/parameters/WebhookTimestamp' }]
+      requestBody:
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/RedemptionEvent' }
+      responses: { '200': { description: Received } }
+  order.finished:
+    post:
+      operationId: onOrderFinished
+      summary: Invoice finalized (drives the "you earned points" notification)
+      parameters: [{ $ref: '#/components/parameters/WebhookSignature' }, { $ref: '#/components/parameters/WebhookTimestamp' }]
+      requestBody:
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/OrderEvent' }
+      responses: { '200': { description: Received } }
+  order.refunded:
+    post:
+      operationId: onOrderRefunded
+      summary: Full or partial refund processed (points already adjusted by the ERP)
+      parameters: [{ $ref: '#/components/parameters/WebhookSignature' }, { $ref: '#/components/parameters/WebhookTimestamp' }]
+      requestBody:
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/OrderEvent' }
+      responses: { '200': { description: Received } }
+  points.adjusted:
+    post:
+      operationId: onPointsAdjusted
+      summary: Manual points adjustment
+      parameters: [{ $ref: '#/components/parameters/WebhookSignature' }, { $ref: '#/components/parameters/WebhookTimestamp' }]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '#/components/schemas/EventEnvelope'
+                - type: object
+                  properties:
+                    data: { $ref: '#/components/schemas/PointsEntry' }
+      responses: { '200': { description: Received } }
+
+components:
+  securitySchemes:
+    oauth2:
+      type: oauth2
+      description: Client-credentials grant; short-lived access tokens; credentials scoped to Workspace 0.
+      flows:
+        clientCredentials:
+          tokenUrl: https://{erpHost}/oauth/token
+          scopes:
+            zaad.read: Read customers, points, invoices, branches
+            zaad.redemption: Read redemption requests and submit customer decisions
+
+  parameters:
+    CustomerId:
+      name: customerId
+      in: path
+      required: true
+      schema: { type: string, pattern: '^\d{1,12}$', example: '900001' }
+      x-erp-source: customer_0.id
+    RequestId:
+      name: requestId
+      in: path
+      required: true
+      schema: { type: string, example: RR-8F2K1 }
+    Cursor:
+      name: cursor
+      in: query
+      required: false
+      description: Opaque cursor from the previous page's `nextCursor`.
+      schema: { type: string }
+    Limit:
+      name: limit
+      in: query
+      required: false
+      schema: { type: integer, minimum: 1, maximum: 50, default: 20 }
+    WebhookSignature:
+      name: X-Zaad-Signature
+      in: header
+      required: true
+      description: 'sha256=<hex HMAC-SHA256 of "<timestamp>.<raw body>" with the shared webhook secret>'
+      schema: { type: string }
+    WebhookTimestamp:
+      name: X-Zaad-Timestamp
+      in: header
+      required: true
+      description: Unix seconds. Receivers reject events older than 5 minutes (replay protection).
+      schema: { type: integer }
+
+  responses:
+    BadRequest:
+      description: Invalid input
+      content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } }
+    Unauthorized:
+      description: Missing or invalid credentials
+      content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } }
+    NotFound:
+      description: Not found (or not owned by this customer)
+      content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } }
+    Error:
+      description: Error
+      content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } }
+
+  schemas:
+    Page:
+      type: object
+      required: [items, nextCursor]
+      properties:
+        items: { type: array, items: {} }
+        nextCursor: { type: [string, 'null'], description: null when there are no more pages }
+
+    Error:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: object
+          required: [code, message]
+          properties:
+            code: { type: string, example: REDEMPTION_EXPIRED, description: Stable machine-readable code }
+            message: { type: string }
+            requestId: { type: string, description: For support / log correlation }
+
+    ErrorWithRequest:
+      allOf:
+        - $ref: '#/components/schemas/Error'
+        - type: object
+          properties:
+            request: { $ref: '#/components/schemas/RedemptionRequest' }
+
+    Customer:
+      type: object
+      required: [customerId, mobileNumber, accountType]
+      properties:
+        customerId: { type: string, x-erp-source: customer_0.id }
+        name: { type: [string, 'null'], x-erp-source: customer_0.name }
+        mobileNumber: { type: string, description: 'Normalized +9665XXXXXXXX', x-erp-source: customer_0.phone_number }
+        accountType:
+          type: string
+          enum: [individual, institutional]
+          description: NEW FLAG — institutional/insurance/house accounts cannot register in the app.
+      description: National ID (identity_id), gender and age must NOT be returned.
+
+    PointsBalance:
+      type: object
+      required: [points, asOf]
+      properties:
+        points: { type: integer, x-erp-source: customer_0.points }
+        asOf: { type: string, format: date-time, description: When the ERP produced this value }
+
+    PointsEntry:
+      type: object
+      required: [id, occurredAt, type, pointsDelta]
+      properties:
+        id: { type: string }
+        occurredAt: { type: string, format: date-time }
+        type: { type: string, enum: [earned, redeemed, refund_adjustment, manual_adjustment] }
+        pointsDelta: { type: integer, description: 'Signed: positive adds, negative removes' }
+        balanceAfter: { type: [integer, 'null'] }
+        invoiceId: { type: [string, 'null'] }
+        invoiceNumber: { type: [string, 'null'] }
+        branchId: { type: [string, 'null'] }
+        branchName: { type: [string, 'null'] }
+        reason: { type: [string, 'null'], description: Customer-safe text. No staff names. }
+
+    InvoiceStatus:
+      type: string
+      enum: [finished, refunded, partially_refunded, cancelled]
+      x-erp-source: 'orders_0.order_status (FINISHED, REFUND, REFUND_PARTIALLY, CANCEL)'
+
+    InvoiceSummary:
+      type: object
+      required: [invoiceId, invoiceNumber, issuedAt, branchId, branchName, total, currency, status]
+      properties:
+        invoiceId: { type: string, x-erp-source: orders_0.id }
+        invoiceNumber: { type: string, description: 'The number printed on the customer receipt (OPEN: orders_0.id, uuid or ZATCA icv?)' }
+        issuedAt: { type: string, format: date-time, x-erp-source: orders_0.created_at }
+        branchId: { type: string, x-erp-source: orders_0.branch_id }
+        branchName: { type: string, x-erp-source: branch_0.name }
+        total: { type: number, description: 'Amount paid (SAR, incl. VAT)', x-erp-source: orders_0.total }
+        currency: { type: string, const: SAR }
+        status: { $ref: '#/components/schemas/InvoiceStatus' }
+        pointsEarned: { type: [integer, 'null'], x-erp-source: orders_0.due_points_to_order }
+
+    InvoiceLine:
+      type: object
+      required: [name, quantity, unitPrice, lineTotal]
+      properties:
+        name: { type: string, x-erp-source: order_detail_0.item_name }
+        quantity: { type: integer, x-erp-source: order_detail_0.quantity }
+        unitPrice: { type: number, x-erp-source: order_detail_0.item_price }
+        discount: { type: [number, 'null'], description: 'Offer + voucher + invoice discounts', x-erp-source: 'order_detail_0.item_offer_discount + item_voucher_discount + item_invoice_discount' }
+        pointsDiscount: { type: [number, 'null'], x-erp-source: order_detail_0.item_points_discount }
+        tax: { type: [number, 'null'], x-erp-source: order_detail_0.item_tax }
+        lineTotal: { type: number, x-erp-source: order_detail_0.item_price_after_discounts }
+
+    InvoiceDetail:
+      allOf:
+        - $ref: '#/components/schemas/InvoiceSummary'
+        - type: object
+          required: [lines]
+          properties:
+            lines: { type: array, items: { $ref: '#/components/schemas/InvoiceLine' } }
+            subTotal: { type: [number, 'null'], x-erp-source: orders_0.sub_total }
+            discountTotal: { type: [number, 'null'], x-erp-source: orders_0.discount }
+            voucherDiscount: { type: [number, 'null'], x-erp-source: orders_0.voucher_discount }
+            pointsUsed: { type: [integer, 'null'], x-erp-source: orders_0.point_used }
+            pointsValue: { type: [number, 'null'], description: SAR value of points used, x-erp-source: orders_0.point_to_cash }
+            taxTotal: { type: [number, 'null'], x-erp-source: orders_0.tax_total }
+            paymentMethod: { type: [string, 'null'], enum: [cash, card, cash_and_card, null], x-erp-source: 'orders_0.payment_method (CASH, VISA, CASH_AND_VISA)' }
+
+    Branch:
+      type: object
+      required: [branchId, name]
+      properties:
+        branchId: { type: string, x-erp-source: branch_0.id }
+        name: { type: string, x-erp-source: branch_0.name }
+        city: { type: [string, 'null'], x-erp-source: branch_0.city }
+
+    RedemptionStatus:
+      type: string
+      enum: [pending, completed, rejected, expired, failed]
+      description: |
+        pending → completed (approved and deducted) | rejected (customer said no) |
+        expired (no answer in time) | failed (e.g. insufficient live balance). Only `completed` deducts points.
+
+    RedemptionRequest:
+      type: object
+      description: NEW ENTITY — does not exist in the ERP today.
+      required: [requestId, customerId, branchId, branchName, points, discountAmount, currency, status, createdAt, expiresAt]
+      properties:
+        requestId: { type: string, description: 'Unique; also shown to the cashier as the reference' }
+        customerId: { type: string }
+        branchId: { type: string }
+        branchName: { type: string }
+        points: { type: integer, description: Multiple of 50, example: 1000 }
+        discountAmount: { type: number, description: Whole SAR (points / 50), example: 20 }
+        currency: { type: string, const: SAR }
+        status: { $ref: '#/components/schemas/RedemptionStatus' }
+        createdAt: { type: string, format: date-time }
+        expiresAt: { type: string, format: date-time, description: Configurable TTL (suggested 2–3 minutes) }
+        completedAt: { type: [string, 'null'], format: date-time }
+
+    EventEnvelope:
+      type: object
+      required: [eventId, type, occurredAt]
+      properties:
+        eventId: { type: string, description: Unique; receivers de-duplicate on it }
+        type: { type: string, example: redemption.created }
+        occurredAt: { type: string, format: date-time }
+      description: Delivery is at-least-once with retries (suggested exponential backoff up to 24h).
+
+    RedemptionEvent:
+      allOf:
+        - $ref: '#/components/schemas/EventEnvelope'
+        - type: object
+          properties:
+            data: { $ref: '#/components/schemas/RedemptionRequest' }
+
+    OrderEvent:
+      allOf:
+        - $ref: '#/components/schemas/EventEnvelope'
+        - type: object
+          properties:
+            data:
+              type: object
+              required: [customerId, invoiceId]
+              properties:
+                customerId: { type: string }
+                invoiceId: { type: string }
+                invoiceNumber: { type: string }
+                pointsDelta: { type: [integer, 'null'], description: Points earned (positive) or reversed (negative) by this event }
+                balanceAfter: { type: [integer, 'null'] }
