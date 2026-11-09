@@ -63,15 +63,16 @@ class EmptyView extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Center(
         child: Padding(
-          padding: const EdgeInsets.all(32),
+          padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 40),
           child: Column(mainAxisSize: MainAxisSize.min, children: [
             Container(
-              padding: const EdgeInsets.all(18),
-              decoration: const BoxDecoration(color: ZaadColors.primarySoft, shape: BoxShape.circle),
-              child: Icon(icon, size: 32, color: ZaadColors.primary),
+              width: 88,
+              height: 88,
+              decoration: BoxDecoration(color: ZaadColors.primarySoft, borderRadius: BorderRadius.circular(28)),
+              child: Icon(icon, size: 40, color: ZaadColors.primary),
             ),
-            const SizedBox(height: 16),
-            Text(text, textAlign: TextAlign.center, style: const TextStyle(color: ZaadColors.textMuted, fontSize: 15, height: 1.5)),
+            const SizedBox(height: 20),
+            Text(text, textAlign: TextAlign.center, style: const TextStyle(color: ZaadColors.textMuted, fontSize: 15, height: 1.6)),
           ]),
         ),
       );
@@ -84,15 +85,20 @@ class ErrorView extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Center(
         child: Padding(
-          padding: const EdgeInsets.all(32),
+          padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 40),
           child: Column(mainAxisSize: MainAxisSize.min, children: [
-            const Icon(Icons.cloud_off_rounded, size: 40, color: ZaadColors.textMuted),
-            const SizedBox(height: 12),
-            Text(errorText(context.t, error), textAlign: TextAlign.center, style: const TextStyle(fontSize: 15, height: 1.5)),
+            Container(
+              width: 88,
+              height: 88,
+              decoration: BoxDecoration(color: ZaadColors.dangerSoft, borderRadius: BorderRadius.circular(28)),
+              child: const Icon(Icons.cloud_off_rounded, size: 40, color: ZaadColors.danger),
+            ),
+            const SizedBox(height: 20),
+            Text(errorText(context.t, error), textAlign: TextAlign.center, style: const TextStyle(fontSize: 15, height: 1.6)),
             if (onRetry != null) ...[
-              const SizedBox(height: 16),
-              OutlinedButton.icon(
-                style: OutlinedButton.styleFrom(minimumSize: const Size(140, 44)),
+              const SizedBox(height: 20),
+              FilledButton.tonalIcon(
+                style: FilledButton.styleFrom(minimumSize: const Size(160, 48), backgroundColor: ZaadColors.primarySoft, foregroundColor: ZaadColors.primary),
                 onPressed: onRetry,
                 icon: const Icon(Icons.refresh_rounded),
                 label: Text(context.t.retry),
@@ -103,32 +109,19 @@ class ErrorView extends StatelessWidget {
       );
 }
 
-/// Renders an AsyncValue with consistent loading / error+retry states.
+/// Renders an AsyncValue with consistent loading (skeleton) / error+retry states.
 class AsyncBody<T> extends StatelessWidget {
   final AsyncValue<T> value;
   final Widget Function(T data) builder;
   final VoidCallback onRetry;
-  const AsyncBody({super.key, required this.value, required this.builder, required this.onRetry});
+  final Widget? loading;
+  const AsyncBody({super.key, required this.value, required this.builder, required this.onRetry, this.loading});
   @override
   Widget build(BuildContext context) => switch (value) {
         AsyncData(:final value) => builder(value),
         AsyncError(:final error) => ErrorView(error: error, onRetry: onRetry),
-        _ => const LoadingView(),
+        _ => loading ?? const LoadingView(),
       };
-}
-
-class SectionTitle extends StatelessWidget {
-  final String text;
-  final Widget? trailing;
-  const SectionTitle(this.text, {super.key, this.trailing});
-  @override
-  Widget build(BuildContext context) => Padding(
-        padding: const EdgeInsets.fromLTRB(4, 8, 4, 10),
-        child: Row(children: [
-          Expanded(child: Text(text, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700))),
-          ?trailing,
-        ]),
-      );
 }
 
 class KeyValueRow extends StatelessWidget {
@@ -177,7 +170,12 @@ class NotificationBell extends ConsumerWidget {
     return IconButton(
       onPressed: onTap,
       tooltip: context.t.notificationsTitle,
-      icon: Badge(isLabelVisible: unread > 0, label: Text('$unread'), child: Icon(Icons.notifications_none_rounded, color: color)),
+      icon: Badge(
+        isLabelVisible: unread > 0,
+        backgroundColor: const Color(0xFFE5484D),
+        label: Text(unread > 9 ? '9+' : '$unread'),
+        child: Icon(Icons.notifications_none_rounded, color: color, size: 26),
+      ),
     );
   }
 }

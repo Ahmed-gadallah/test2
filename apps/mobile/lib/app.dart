@@ -15,6 +15,7 @@ import 'features/profile/profile_screen.dart';
 import 'features/redemption/redemption_screen.dart';
 import 'l10n/gen/app_localizations.dart';
 import 'state/providers.dart';
+import 'widgets/bottom_nav.dart';
 import 'widgets/common.dart';
 
 class _SessionListenable extends ChangeNotifier {
@@ -93,14 +94,14 @@ class _ShellState extends ConsumerState<_Shell> {
     });
     return Scaffold(
       body: Column(children: [const DemoBanner(), Expanded(child: widget.shell)]),
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: widget.shell.currentIndex,
-        onDestinationSelected: (i) => widget.shell.goBranch(i, initialLocation: i == widget.shell.currentIndex),
-        destinations: [
-          NavigationDestination(icon: const Icon(Icons.home_outlined), selectedIcon: const Icon(Icons.home_rounded), label: t.navHome),
-          NavigationDestination(icon: const Icon(Icons.receipt_long_outlined), selectedIcon: const Icon(Icons.receipt_long_rounded), label: t.navInvoices),
-          NavigationDestination(icon: const Icon(Icons.local_offer_outlined), selectedIcon: const Icon(Icons.local_offer_rounded), label: t.navOffers),
-          NavigationDestination(icon: const Icon(Icons.person_outline_rounded), selectedIcon: const Icon(Icons.person_rounded), label: t.navProfile),
+      bottomNavigationBar: ZaadBottomNav(
+        index: widget.shell.currentIndex,
+        onTap: (i) => widget.shell.goBranch(i, initialLocation: i == widget.shell.currentIndex),
+        items: [
+          NavItem(Icons.home_outlined, Icons.home_rounded, t.navHome),
+          NavItem(Icons.receipt_long_outlined, Icons.receipt_long_rounded, t.navInvoices),
+          NavItem(Icons.local_offer_outlined, Icons.local_offer_rounded, t.navOffers),
+          NavItem(Icons.person_outline_rounded, Icons.person_rounded, t.navProfile),
         ],
       ),
     );
