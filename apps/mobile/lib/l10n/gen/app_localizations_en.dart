@@ -569,5 +569,5 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get callFromBrowserNote =>
-      'Calling directly may not work from a browser. Copy the number and call it from your phone app.';
+      'Direct calling works in the Zaad app. In a browser, copy the number and call it from your phone app.';
 }

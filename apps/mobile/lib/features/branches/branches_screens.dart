@@ -334,7 +334,7 @@ class _BranchDetail extends StatelessWidget {
 
 /// "Call branch". In the app: opens the phone's dialer with the number filled in (tel:, never auto-calls).
 /// In a browser, tel: is unreliable — mobile browsers block it from embedded pages such as the shared
-/// demo link — so the web build opens a sheet with the number, a Copy button and a call attempt.
+/// demo link — so the web build opens a sheet with the number and a Copy button (no dead Call button).
 class PhoneAction extends StatelessWidget {
   /// Overridable in tests; true for web builds.
   static bool useCallSheet = kIsWeb;
@@ -355,6 +355,7 @@ Future<void> showCallSheet(BuildContext context, Branch b) {
   final number = context.fmt.mobile(b.phone!);
   return showModalBottomSheet<void>(
     context: context,
+    useRootNavigator: true, // so [linkGuard] sees it and disables the web links underneath
     showDragHandle: true,
     builder: (sheet) => SafeArea(
       child: Padding(
@@ -376,11 +377,6 @@ Future<void> showCallSheet(BuildContext context, Branch b) {
               onPressed: () => _copy(sheet, b.phone!, closeSheet: true),
               icon: const Icon(Icons.copy_rounded),
               label: Text(t.copyNumber),
-            ),
-            const SizedBox(height: 10),
-            ExternalLink(
-              uri: b.telUri!,
-              builder: (open) => OutlinedButton.icon(onPressed: open, icon: const Icon(Icons.call_rounded), label: Text(t.callBranch)),
             ),
           ],
         ),

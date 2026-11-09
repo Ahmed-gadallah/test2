@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:url_launcher/link.dart';
 
@@ -293,14 +294,49 @@ class InfoRow extends StatelessWidget {
 /// Opens an external website. On phones it launches the system browser; on the web it renders a
 /// real <a target="_blank"> link, which also works inside sandboxed frames that block window.open
 /// (e.g. the shared demo link). Use this for every external URL instead of calling launchUrl.
+///
+/// On the web each Link is a real <a> element layered over the app, and it keeps receiving taps even
+/// when a dialog or bottom sheet is drawn above it (a tap on a sheet button could open the map link
+/// underneath). So while any dialog/sheet is open ([linkGuard]), web links render as plain widgets.
 class ExternalLink extends StatelessWidget {
   final Uri uri;
   final Widget Function(VoidCallback? open) builder;
   const ExternalLink({super.key, required this.uri, required this.builder});
   @override
-  Widget build(BuildContext context) => Link(
-        uri: uri,
-        target: LinkTarget.blank,
-        builder: (context, follow) => builder(follow == null ? null : () => follow()),
-      );
+  Widget build(BuildContext context) {
+    Widget link() => Link(
+          uri: uri,
+          target: LinkTarget.blank,
+          builder: (context, follow) => builder(follow == null ? null : () => follow()),
+        );
+    if (!kIsWeb && !LinkGuard.forceWebBehaviour) return link();
+    return ValueListenableBuilder<int>(
+      valueListenable: linkGuard.openPopups,
+      builder: (_, open, _) => open > 0 ? builder(() {}) : link(),
+    );
+  }
 }
+
+/// Counts dialogs/bottom sheets on the root navigator (see [ExternalLink]).
+class LinkGuard extends NavigatorObserver {
+  /// Tests run on the VM; this lets them exercise the web behaviour.
+  static bool forceWebBehaviour = false;
+  final openPopups = ValueNotifier<int>(0);
+  void _change(Route<dynamic>? r, int d) {
+    if (r is PopupRoute) openPopups.value = (openPopups.value + d).clamp(0, 1 << 20);
+  }
+
+  @override
+  void didPush(Route<dynamic> route, Route<dynamic>? previousRoute) => _change(route, 1);
+  @override
+  void didPop(Route<dynamic> route, Route<dynamic>? previousRoute) => _change(route, -1);
+  @override
+  void didRemove(Route<dynamic> route, Route<dynamic>? previousRoute) => _change(route, -1);
+  @override
+  void didReplace({Route<dynamic>? newRoute, Route<dynamic>? oldRoute}) {
+    _change(oldRoute, -1);
+    _change(newRoute, 1);
+  }
+}
+
+final linkGuard = LinkGuard();

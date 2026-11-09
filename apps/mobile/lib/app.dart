@@ -19,6 +19,7 @@ import 'l10n/gen/app_localizations.dart';
 import 'state/providers.dart';
 import 'widgets/bottom_nav.dart';
 import 'widgets/common.dart';
+import 'widgets/ui_kit.dart';
 
 class _SessionListenable extends ChangeNotifier {
   void ping() => notifyListeners();
@@ -33,6 +34,7 @@ final routerProvider = Provider<GoRouter>((ref) {
 
   return GoRouter(
     initialLocation: '/home',
+    observers: [linkGuard],
     refreshListenable: refresh,
     redirect: (context, state) {
       final s = ref.read(sessionProvider);

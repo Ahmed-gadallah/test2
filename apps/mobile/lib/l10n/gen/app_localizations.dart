@@ -1115,7 +1115,7 @@ abstract class AppLocalizations {
   /// No description provided for @callFromBrowserNote.
   ///
   /// In en, this message translates to:
-  /// **'Calling directly may not work from a browser. Copy the number and call it from your phone app.'**
+  /// **'Direct calling works in the Zaad app. In a browser, copy the number and call it from your phone app.'**
   String get callFromBrowserNote;
 }
 

@@ -190,5 +190,5 @@
   "copyNumber": "Copy number",
   "numberCopied": "Number copied",
   "copyFailed": "Couldn't copy — long-press the number to select and copy it",
-  "callFromBrowserNote": "Calling directly may not work from a browser. Copy the number and call it from your phone app."
+  "callFromBrowserNote": "Direct calling works in the Zaad app. In a browser, copy the number and call it from your phone app."
 }

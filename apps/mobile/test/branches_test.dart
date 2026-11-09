@@ -12,6 +12,7 @@ import 'package:zaad/core/theme.dart';
 import 'package:zaad/data/models.dart';
 import 'package:zaad/features/branches/branches_screens.dart';
 import 'package:zaad/l10n/gen/app_localizations.dart';
+import 'package:zaad/widgets/ui_kit.dart';
 import 'package:zaad/state/providers.dart';
 
 Branch _b({int id = 1, String nameAr = 'صيدلية زاد الدوائية 48', String? nameEn = 'zaad pharmacy 48', String city = 'بقعاء', String? district = 'بقعاء', String addressAr = 'بقعاء', String? addressEn = 'Baqaa', String? phone = '+966541418264', String? mapsUrl = 'https://maps.app.goo.gl/BB8rfs9zdyUzd7a38', String? notes}) =>
@@ -28,7 +29,7 @@ Future<void> pump(WidgetTester tester, {String lang = 'ar', String initial = '/b
   tester.view.physicalSize = const Size(1170, 2532);
   tester.view.devicePixelRatio = 3;
   addTearDown(tester.view.reset);
-  final router = GoRouter(initialLocation: initial, routes: [
+  final router = GoRouter(initialLocation: initial, observers: [linkGuard], routes: [
     GoRoute(path: '/branches', builder: (_, _) => const BranchesScreen()),
     GoRoute(path: '/branches/:id', builder: (_, s) => BranchDetailScreen(id: int.parse(s.pathParameters['id']!))),
   ]);
@@ -162,7 +163,11 @@ void main() {
 
   testWidgets('web build: Call opens a sheet with the number, Copy and a call attempt (browsers block tel: in embedded pages)', (tester) async {
     PhoneAction.useCallSheet = true;
-    addTearDown(() => PhoneAction.useCallSheet = false);
+    LinkGuard.forceWebBehaviour = true;
+    addTearDown(() {
+      PhoneAction.useCallSheet = false;
+      LinkGuard.forceWebBehaviour = false;
+    });
     String? copied;
     tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(SystemChannels.platform, (call) async {
       if (call.method == 'Clipboard.setData') copied = (call.arguments as Map)['text'] as String;
@@ -174,11 +179,15 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.byKey(const Key('call-sheet')), findsOneWidget);
     expect(find.text('054 132 9804'), findsWidgets);
+    // While the sheet is open, no web link is live underneath it (a tap on Copy once opened the map),
+    // and the sheet has no Call button that browsers would silently block.
+    expect(find.byType(Link), findsNothing);
     await tester.tap(find.byKey(const Key('copy-number')));
     await tester.pumpAndSettle();
     expect(copied, '0541329804');
     expect(find.byKey(const Key('call-sheet')), findsNothing);
     expect(find.text('تم نسخ الرقم'), findsOneWidget);
+    expect(linkUris(tester).map((u) => u.toString()), contains('https://maps.app.goo.gl/gyN2GtVJuXu4Hjk57')); // links back after closing
   });
 
   testWidgets('unknown or inactive branch id → not found (the API never returns inactive branches)', (tester) async {

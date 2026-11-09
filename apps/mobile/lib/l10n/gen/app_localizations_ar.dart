@@ -564,5 +564,5 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get callFromBrowserNote =>
-      'الاتصال المباشر قد لا يعمل من المتصفح. انسخ الرقم واتصل به من تطبيق الهاتف.';
+      'الاتصال المباشر متاح في تطبيق زاد. من المتصفح: انسخ الرقم واتصل به من تطبيق الهاتف.';
 }
