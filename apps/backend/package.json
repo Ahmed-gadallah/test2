@@ -4,11 +4,11 @@
   "description": "Zaad Pharmacies customer app backend",
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
-    "start": "node dist/main.js",
-    "dev": "tsc-watch -p tsconfig.build.json --onSuccess \"node dist/main.js\"",
+    "start": "node --env-file-if-exists=.env dist/main.js",
+    "dev": "tsc-watch -p tsconfig.build.json --onSuccess \"node --env-file-if-exists=.env dist/main.js\"",
     "db:generate": "drizzle-kit generate",
-    "db:migrate": "node dist/db/migrate.js",
-    "seed:admin": "node dist/scripts/create-admin.js",
+    "db:migrate": "node --env-file-if-exists=.env dist/db/migrate.js",
+    "seed:admin": "node --env-file-if-exists=.env dist/scripts/create-admin.js",
     "test": "jest --runInBand",
     "typecheck": "tsc --noEmit"
   },
@@ -61,5 +61,8 @@
   },
   "overrides": {
     "multer": "^2.5.0"
+  },
+  "engines": {
+    "node": ">=22.9"
   }
 }
