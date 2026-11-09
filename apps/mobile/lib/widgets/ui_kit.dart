@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:url_launcher/link.dart';
 
 import '../core/theme.dart';
 
@@ -286,5 +287,20 @@ class InfoRow extends StatelessWidget {
             if (onTap != null && trailing == null) const Icon(Icons.chevron_right_rounded, color: ZaadColors.textMuted),
           ]),
         ),
+      );
+}
+
+/// Opens an external website. On phones it launches the system browser; on the web it renders a
+/// real <a target="_blank"> link, which also works inside sandboxed frames that block window.open
+/// (e.g. the shared demo link). Use this for every external URL instead of calling launchUrl.
+class ExternalLink extends StatelessWidget {
+  final Uri uri;
+  final Widget Function(VoidCallback? open) builder;
+  const ExternalLink({super.key, required this.uri, required this.builder});
+  @override
+  Widget build(BuildContext context) => Link(
+        uri: uri,
+        target: LinkTarget.blank,
+        builder: (context, follow) => builder(follow == null ? null : () => follow()),
       );
 }

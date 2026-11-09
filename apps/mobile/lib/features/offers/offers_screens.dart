@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/theme.dart';
 import '../../data/models.dart';
@@ -384,13 +383,13 @@ class OfferDetailScreen extends ConsumerWidget {
             ),
             if (o.destinationUrl != null && !o.ended) ...[
               const SizedBox(height: ZaadSpace.lg),
-              FilledButton.icon(
-                onPressed: () => launchUrl(
-                  Uri.parse(o.destinationUrl!),
-                  mode: LaunchMode.externalApplication,
+              ExternalLink(
+                uri: Uri.parse(o.destinationUrl!),
+                builder: (open) => FilledButton.icon(
+                  onPressed: open,
+                  icon: const Icon(Icons.open_in_new_rounded, size: 20),
+                  label: Text(o.ctaLabel(ar) ?? t.viewDetails),
                 ),
-                icon: const Icon(Icons.open_in_new_rounded, size: 20),
-                label: Text(o.ctaLabel(ar) ?? t.viewDetails),
               ),
             ],
           ],

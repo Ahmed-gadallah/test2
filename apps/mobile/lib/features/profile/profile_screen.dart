@@ -119,7 +119,15 @@ class _ProfileState extends ConsumerState<ProfileScreen> {
               subtitle: bioAvailable ? null : t.biometricUnavailable,
               trailing: Switch(value: bio && bioAvailable, onChanged: bioAvailable ? (v) => ref.read(biometricProvider.notifier).set(v) : null),
             ),
-            InfoRow(icon: Icons.shopping_bag_outlined, title: t.shopOnline, trailing: const Icon(Icons.open_in_new_rounded, size: 20, color: ZaadColors.textMuted), onTap: openOnlineStore),
+            ExternalLink(
+              uri: onlineStoreUri,
+              builder: (open) => InfoRow(
+                icon: Icons.shopping_bag_outlined,
+                title: t.shopOnline,
+                trailing: const Icon(Icons.open_in_new_rounded, size: 20, color: ZaadColors.textMuted),
+                onTap: open,
+              ),
+            ),
             InfoRow(icon: Icons.logout_rounded, title: t.logout, color: ZaadColors.danger, trailing: const SizedBox.shrink(), onTap: _logout),
           ]),
         ),
