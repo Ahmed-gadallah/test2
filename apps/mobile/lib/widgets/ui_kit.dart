@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:url_launcher/link.dart';
 
@@ -300,7 +301,10 @@ class ExternalLink extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Link(
         uri: uri,
-        target: LinkTarget.blank,
+        // tel: on the web opens in the same frame: mobile browsers block a *new window* for tel:
+        // (especially from an embedded page), which is why Call worked on a laptop but not on a phone.
+        // Native builds always hand tel: to the system dialer (it never auto-calls).
+        target: kIsWeb && uri.scheme == 'tel' ? LinkTarget.self : LinkTarget.blank,
         builder: (context, follow) => builder(follow == null ? null : () => follow()),
       );
 }

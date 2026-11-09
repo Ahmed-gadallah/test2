@@ -553,4 +553,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get branchLocation => 'Location';
+
+  @override
+  String get navBranches => 'Branches';
 }

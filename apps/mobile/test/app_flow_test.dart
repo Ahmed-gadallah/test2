@@ -73,6 +73,16 @@ void main() {
     expect(find.text('2,500'), findsOneWidget);
     expect(find.text('تعادل 50 ر.س'), findsOneWidget);
 
+    // Five bottom tabs: home, invoices, offers, branches, profile.
+    for (final tab in ['الرئيسية', 'الفواتير', 'العروض', 'الفروع', 'حسابي']) {
+      expect(find.text(tab), findsWidgets, reason: tab);
+    }
+    await tester.tap(find.text('الفروع').last);
+    await tester.pump(const Duration(seconds: 1));
+    await tester.pump(const Duration(seconds: 1));
+    expect(find.text('فروع زاد'), findsOneWidget);
+    expect(find.text('53 فرعًا'), findsOneWidget);
+
     await tester.tap(find.text('حسابي'));
     await tester.pump(const Duration(seconds: 1));
     await tester.tap(find.text('English'));

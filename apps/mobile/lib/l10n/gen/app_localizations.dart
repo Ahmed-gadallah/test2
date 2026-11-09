@@ -1087,6 +1087,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Location'**
   String get branchLocation;
+
+  /// No description provided for @navBranches.
+  ///
+  /// In en, this message translates to:
+  /// **'Branches'**
+  String get navBranches;
 }
 
 class _AppLocalizationsDelegate

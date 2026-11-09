@@ -172,5 +172,6 @@
   "phoneUnavailable": "رقم الهاتف غير متوفر",
   "locationUnavailable": "الموقع غير متوفر",
   "clearSearch": "مسح البحث",
-  "branchLocation": "الموقع"
+  "branchLocation": "الموقع",
+  "navBranches": "الفروع"
 }

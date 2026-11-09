@@ -549,4 +549,7 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get branchLocation => 'الموقع';
+
+  @override
+  String get navBranches => 'الفروع';
 }

@@ -32,7 +32,7 @@ class _BranchesScreenState extends ConsumerState<BranchesScreen> {
   Widget build(BuildContext context) {
     final t = context.t;
     return Scaffold(
-      appBar: AppBar(title: Text(t.branchesTitle)),
+      appBar: PageHeader(t.branchesTitle),
       body: Column(
         children: [
           Padding(

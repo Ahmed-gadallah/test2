@@ -539,7 +539,7 @@ class BranchesEntryCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) => SurfaceCard(
     key: const Key('branches-entry'),
-    onTap: () => context.push('/branches'),
+    onTap: () => context.go('/branches'),
     padding: const EdgeInsets.all(14),
     child: Row(
       children: [
