@@ -7,6 +7,8 @@ import { AdminController } from './admin/admin.controller';
 import { AuditModule } from './audit/audit.service';
 import { AuthController } from './auth/auth.controller';
 import { AuthService } from './auth/auth.service';
+import { AdminBranchesController, BranchesController } from './branches/branches.controller';
+import { BranchesService } from './branches/branches.service';
 import { CustomerAuthGuard } from './auth/customer-auth.guard';
 import { OtpService } from './auth/otp/otp.service';
 import { ENV, Env } from './config/env';
@@ -36,6 +38,8 @@ export class AppModule {
       AdminAuthController,
       AdminOffersController,
       AdminController,
+      BranchesController,
+      AdminBranchesController,
     ];
     // Dev simulation endpoints exist ONLY with the mock ERP (which production refuses at startup).
     if (env.ERP_ADAPTER === 'mock') controllers.push(DevController);
@@ -62,6 +66,7 @@ export class AppModule {
         RedemptionService,
         OffersService,
         BalanceCache,
+        BranchesService,
       ],
     };
   }

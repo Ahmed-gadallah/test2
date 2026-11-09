@@ -270,3 +270,31 @@ export const auditLogs = pgTable(
   },
   (t) => [index('audit_logs_created_idx').on(t.createdAt), index('audit_logs_resource_idx').on(t.resourceType, t.resourceId)],
 );
+
+/**
+ * Branch directory shown to customers (Branch Locator). Imported from the branches Excel sheet,
+ * which is the source of truth; `branch_id` is the sheet's Branch ID and matches ERP `branch_0.id`,
+ * so re-importing the same file updates rows instead of duplicating them.
+ * ONE phone per branch (used for both calls and delivery). No coordinates are stored: the app opens
+ * the supplied Google Maps link as-is and never derives or substitutes a location.
+ */
+export const branches = pgTable(
+  'branches',
+  {
+    branchId: integer('branch_id').primaryKey(),
+    nameAr: text('name_ar').notNull(),
+    nameEn: text('name_en'),
+    city: text('city').notNull(),
+    district: text('district'),
+    addressAr: text('address_ar').notNull(),
+    addressEn: text('address_en'),
+    /** E.164 (+9665XXXXXXXX / +966 landline) or a 9-digit 92XXXXXXX unified number. Null = not provided. */
+    phone: text('phone'),
+    /** Validated https Google Maps link, stored exactly as supplied. Null = missing or rejected at import. */
+    mapsUrl: text('maps_url'),
+    notes: text('notes'),
+    active: boolean('active').notNull().default(true),
+    ...timestamps,
+  },
+  (t) => [index('branches_active_city_idx').on(t.active, t.city)],
+);

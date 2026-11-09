@@ -25,7 +25,7 @@ export async function setupApp(): Promise<TestCtx> {
   await app.init();
   const db = app.get<Db>(DB);
   await db.execute(
-    sql`truncate table push_deliveries, notifications, campaigns, offers, device_tokens, redemption_requests, refresh_sessions, otp_requests, users, admin_users, audit_logs restart identity cascade`,
+    sql`truncate table branches, push_deliveries, notifications, campaigns, offers, device_tokens, redemption_requests, refresh_sessions, otp_requests, users, admin_users, audit_logs restart identity cascade`,
   );
   return { app, db, erp: app.get(ErpAdapter) as MockErpAdapter, http: () => request(app.getHttpServer()) };
 }

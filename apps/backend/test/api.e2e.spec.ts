@@ -1,6 +1,8 @@
 import { eq, sql } from 'drizzle-orm';
 import { notifications, offers, otpRequests, users } from '../src/db/schema';
 import { OffersService } from '../src/offers/offers.service';
+import { readBranchSheet } from '../src/branches/branch-import';
+import { BranchesService } from '../src/branches/branches.service';
 import { auth, createAdmin, DEVICE, registerCustomer, setupApp, TestCtx } from './helpers';
 
 let ctx: TestCtx;
@@ -467,5 +469,94 @@ describe('admin dashboard endpoints', () => {
     await ctx.http().patch(`${P}/admin/admins/${me.id}`).set(auth(s)).send({ role: 'customer_support' }).expect(403);
     await ctx.http().patch(`${P}/admin/admins/${me.id}`).set(auth(s)).send({ active: false }).expect(403);
     await ctx.http().patch(`${P}/admin/admins/${me.id}`).set(auth(m)).send({ active: true }).expect(401);
+  });
+});
+
+// ─── Branch Locator ─────────────────────────────────────────────────────────
+describe('branch locator', () => {
+  const SHEET = `${__dirname}/fixtures/zaad-branches.xlsx`;
+  const upload = (t: string, dryRun: boolean) =>
+    ctx.http().post(`${P}/admin/branches/import?dryRun=${dryRun}`).set(auth(t)).attach('file', SHEET);
+
+  it('import is a dry run by default, then applies; importing the same file again creates no duplicates', async () => {
+    const t = await createAdmin(ctx, 'super_admin');
+    const dry = await ctx.http().post(`${P}/admin/branches/import`).set(auth(t)).attach('file', SHEET).expect(200);
+    expect(dry.body.data).toMatchObject({ dryRun: true, applied: false, errors: [] });
+    expect(dry.body.data.created).toHaveLength(53);
+    await ctx.http().get(`${P}/branches`).expect(200).expect((r) => expect(r.body.data).toEqual([]));
+
+    const first = await upload(t, false).expect(200);
+    expect(first.body.data).toMatchObject({ applied: true });
+    expect(first.body.data.created).toHaveLength(53);
+    const second = await upload(t, false).expect(200);
+    expect(second.body.data.created).toEqual([]);
+    expect(second.body.data.updated).toEqual([]);
+    expect(second.body.data.unchanged).toHaveLength(53);
+    const [{ n }] = (await ctx.db.execute(sql`select count(*)::int as n from branches`)).rows as { n: number }[];
+    expect(n).toBe(53);
+
+    const audit = await ctx.http().get(`${P}/admin/audit-logs`).set(auth(t)).expect(200);
+    expect(audit.body.data.filter((a: { action: string }) => a.action === 'branches.import')).toHaveLength(2);
+  });
+
+  it('customers get active branches only, with the single phone and the original maps link', async () => {
+    const t = await createAdmin(ctx, 'super_admin');
+    await upload(t, false).expect(200);
+    await ctx.http().patch(`${P}/admin/branches/20`).set(auth(t)).send({ active: false }).expect(200);
+
+    const list = await ctx.http().get(`${P}/branches`).expect(200); // public, no login
+    expect(list.body.data).toHaveLength(52);
+    expect(list.body.data.find((b: { id: number }) => b.id === 20)).toBeUndefined();
+    await ctx.http().get(`${P}/branches/20`).expect(404);
+    const b = await ctx.http().get(`${P}/branches/0`).expect(200);
+    expect(b.body.data).toEqual({
+      id: 0, nameAr: 'صيدلية زاد الدوائية 48', nameEn: 'zaad pharmacy 48', city: 'بقعاء', district: 'بقعاء', addressAr: 'بقعاء', addressEn: 'Baqaa',
+      phone: '+966541418264', mapsUrl: 'https://maps.app.goo.gl/BB8rfs9zdyUzd7a38', notes: null,
+    });
+    expect(b.body.data).not.toHaveProperty('active');
+    expect(Object.keys(b.body.data).filter((k) => /phone/i.test(k))).toEqual(['phone']); // ONE phone field
+    const noPhone = await ctx.http().get(`${P}/branches/7`).expect(200);
+    expect(noPhone.body.data.phone).toBeNull();
+
+    // Re-importing the sheet (which says active = نعم) re-activates it: the sheet is the source of truth.
+    const re = await upload(t, false).expect(200);
+    expect(re.body.data.updated).toEqual([20]);
+    expect((await ctx.http().get(`${P}/branches`).expect(200)).body.data).toHaveLength(53);
+  });
+
+  it('admin edits use the same validation; marketing can manage branches, support cannot', async () => {
+    const s = await createAdmin(ctx, 'super_admin');
+    const m = await createAdmin(ctx, 'marketing_admin');
+    const c = await createAdmin(ctx, 'customer_support');
+    await upload(s, false).expect(200);
+    await ctx.http().patch(`${P}/admin/branches/7`).set(auth(m)).send({ phone: '055 000 1111' }).expect(200)
+      .expect((r) => expect(r.body.data.phone).toBe('+966550001111'));
+    await ctx.http().patch(`${P}/admin/branches/7`).set(auth(m)).send({ phone: 'abc' }).expect(400);
+    await ctx.http().patch(`${P}/admin/branches/7`).set(auth(m)).send({ mapsUrl: 'https://evil.example/x' }).expect(400);
+    await ctx.http().patch(`${P}/admin/branches/7`).set(auth(m)).send({ mapsUrl: '' }).expect(200)
+      .expect((r) => expect(r.body.data.mapsUrl).toBeNull());
+    await ctx.http().patch(`${P}/admin/branches/7`).set(auth(m)).send({ nameAr: '  ' }).expect(400);
+    await ctx.http().post(`${P}/admin/branches`).set(auth(m)).send({ branchId: 7, nameAr: 'x', city: 'y', addressAr: 'z', active: true }).expect(409);
+    await ctx.http().post(`${P}/admin/branches`).set(auth(m)).send({ branchId: 999, nameAr: 'فرع جديد', city: 'حائل', addressAr: 'حي', active: false }).expect(201);
+    await ctx.http().get(`${P}/branches/999`).expect(404); // inactive → hidden from customers
+    await ctx.http().get(`${P}/admin/branches`).set(auth(c)).expect(403);
+    await ctx.http().patch(`${P}/admin/branches/7`).set(auth(c)).send({ active: false }).expect(403);
+    await upload(c, false).expect(403);
+    await ctx.http().get(`${P}/admin/branches`).expect(401);
+  });
+
+  it('rejects files that are not a workbook, and sheets with errors write nothing', async () => {
+    const t = await createAdmin(ctx, 'super_admin');
+    await ctx.http().post(`${P}/admin/branches/import?dryRun=false`).set(auth(t)).attach('file', Buffer.from('id,name\n1,x'), 'b.csv').expect(400);
+    await ctx.http().post(`${P}/admin/branches/import?dryRun=false`).set(auth(t)).attach('file', Buffer.from('PK\x03\x04garbage'), 'b.xlsx').expect(400);
+    await ctx.http().post(`${P}/admin/branches/import`).set(auth(t)).expect(400);
+
+    const rows = await readBranchSheet(SHEET);
+    rows.push([...rows[1]]); // duplicate Branch ID 0 at the end
+    const r = await ctx.app.get(BranchesService).importRows(rows, false);
+    expect(r.applied).toBe(false);
+    expect(r.errors[0].message).toContain('Duplicate Branch ID');
+    const [{ n }] = (await ctx.db.execute(sql`select count(*)::int as n from branches`)).rows as { n: number }[];
+    expect(n).toBe(0);
   });
 });
