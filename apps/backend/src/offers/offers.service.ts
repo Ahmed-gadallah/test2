@@ -84,12 +84,30 @@ export class OffersService implements OnModuleInit, OnModuleDestroy {
   }
 
   // ── Admin side ────────────────────────────────────────────────────────────
+  /** Admin-set links and images must point at approved hosts (limits damage from a compromised admin account). */
+  private validateHosts(i: Partial<OfferInput>) {
+    const allowed = this.env.OFFER_ALLOWED_HOSTS.split(',').map((h) => h.trim().toLowerCase()).filter(Boolean);
+    for (const [field, url] of [['destinationUrl', i.destinationUrl], ['imageUrl', i.imageUrl]] as const) {
+      if (!url) continue;
+      let host: string;
+      try {
+        host = new URL(url).hostname.toLowerCase();
+      } catch {
+        throw new AppError('VALIDATION_FAILED', HttpStatus.BAD_REQUEST, `${field} is not a valid URL`);
+      }
+      if (!allowed.some((a) => host === a || host.endsWith(`.${a}`))) {
+        throw new AppError('VALIDATION_FAILED', HttpStatus.BAD_REQUEST, `${field} host is not in the allowed list`);
+      }
+    }
+  }
+
   private validateWindow(i: Pick<OfferInput, 'startAt' | 'endAt'>) {
     if (new Date(i.endAt) <= new Date(i.startAt)) throw new AppError('VALIDATION_FAILED', HttpStatus.BAD_REQUEST, 'endAt must be after startAt');
   }
 
   async create(adminId: string, input: OfferInput) {
     this.validateWindow(input);
+    this.validateHosts(input);
     const [o] = await this.db.insert(offers).values({ ...input, startAt: new Date(input.startAt), endAt: new Date(input.endAt), createdBy: adminId, status: 'draft' }).returning();
     await this.audit.log({ actorType: 'admin', actorId: adminId, action: 'offer.created', resourceType: 'offer', resourceId: o.id });
     return this.adminView(o);
@@ -101,6 +119,7 @@ export class OffersService implements OnModuleInit, OnModuleDestroy {
     if (cur.status === 'archived') throw new AppError('OFFER_INVALID_STATE', HttpStatus.CONFLICT, 'Archived offers cannot be edited');
     const next = { startAt: input.startAt ?? cur.startAt.toISOString(), endAt: input.endAt ?? cur.endAt.toISOString() };
     this.validateWindow(next);
+    this.validateHosts(input);
     // Editing NEVER re-sends the notification (spec §12.3). Resend is an explicit action.
     const [o] = await this.db
       .update(offers)

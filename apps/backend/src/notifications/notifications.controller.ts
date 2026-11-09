@@ -65,6 +65,7 @@ export class NotificationsController {
 
   @Delete('devices/:token')
   async remove(@CurrentCustomer() c: CustomerPrincipal, @Param('token') token: string) {
+    if (token.length < 10 || token.length > 4096) throw new AppError('VALIDATION_FAILED', HttpStatus.BAD_REQUEST);
     await this.svc.removeDevice(c.userId, token);
     return { data: { ok: true } };
   }

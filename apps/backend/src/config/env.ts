@@ -15,11 +15,25 @@ const schema = z
     PORT: z.coerce.number().int().positive().default(3000),
     DATABASE_URL: z.string().url(),
     CORS_ORIGINS: z.string().default('*'),
+    /**
+     * Number of reverse-proxy hops in front of the API whose X-Forwarded-For is trusted.
+     * 0 = no proxy (the socket address is the client). A wrong value lets clients spoof
+     * their IP and bypass rate limits, so it must match the real deployment.
+     */
+    TRUST_PROXY_HOPS: z.coerce.number().int().min(0).max(5).default(0),
+    /** Max JSON body size. Nothing in this API legitimately needs more. */
+    BODY_LIMIT: z.string().regex(/^\d+(kb|mb)$/).default('100kb'),
 
     JWT_ACCESS_SECRET: z.string().min(32),
     JWT_REFRESH_SECRET: z.string().min(32),
     JWT_ADMIN_SECRET: z.string().min(32),
-    ACCESS_TOKEN_TTL_SECONDS: z.coerce.number().int().positive().default(900),
+    /** HMAC key for OTP hashes. Separate from token-signing keys. */
+    OTP_HASH_SECRET: z.string().min(32),
+    ACCESS_TOKEN_TTL_SECONDS: z.coerce.number().int().positive().max(3600).default(900),
+    ADMIN_TOKEN_TTL_SECONDS: z.coerce.number().int().positive().max(43_200).default(14_400),
+    /** Per-account lockout after repeated wrong passwords (independent of the per-IP limit). */
+    LOGIN_MAX_FAILURES: z.coerce.number().int().positive().default(5),
+    LOGIN_LOCK_MINUTES: z.coerce.number().int().positive().default(15),
     REFRESH_TOKEN_TTL_DAYS: z.coerce.number().int().positive().default(60),
     VERIFICATION_TOKEN_TTL_SECONDS: z.coerce.number().int().positive().default(600),
 
@@ -42,6 +56,8 @@ const schema = z
     /** Short cache for the balance shown on screen. ERP stays authoritative. */
     BALANCE_CACHE_SECONDS: z.coerce.number().int().nonnegative().default(30),
     ONLINE_STORE_URL: z.string().url().default('https://zaadonline.com'),
+    /** Hosts (and their subdomains) allowed in offer links/images set by admins. Comma-separated. */
+    OFFER_ALLOWED_HOSTS: z.string().default('zaadonline.com'),
   })
   .superRefine((env, ctx) => {
     if (env.NODE_ENV === 'production') {
@@ -57,6 +73,22 @@ const schema = z
       if (env.PUSH_PROVIDER === 'console') {
         ctx.addIssue({ code: 'custom', path: ['PUSH_PROVIDER'], message: 'Console push provider is forbidden in production' });
       }
+      if (env.CORS_ORIGINS.trim() === '*') {
+        ctx.addIssue({ code: 'custom', path: ['CORS_ORIGINS'], message: 'Set explicit origins (admin dashboard URL) in production' });
+      }
+      if (env.ERP_BASE_URL && !env.ERP_BASE_URL.startsWith('https://')) {
+        ctx.addIssue({ code: 'custom', path: ['ERP_BASE_URL'], message: 'ERP must be reached over HTTPS in production' });
+      }
+    }
+    // Secrets: never the documented placeholders, never reused between purposes.
+    const secrets = { JWT_ACCESS_SECRET: env.JWT_ACCESS_SECRET, JWT_REFRESH_SECRET: env.JWT_REFRESH_SECRET, JWT_ADMIN_SECRET: env.JWT_ADMIN_SECRET, OTP_HASH_SECRET: env.OTP_HASH_SECRET };
+    for (const [name, value] of Object.entries(secrets)) {
+      if (env.NODE_ENV === 'production' && /change-me|example|secret-at-least/i.test(value)) {
+        ctx.addIssue({ code: 'custom', path: [name], message: 'Placeholder secret is forbidden in production' });
+      }
+    }
+    if (new Set(Object.values(secrets)).size !== Object.keys(secrets).length) {
+      ctx.addIssue({ code: 'custom', path: ['JWT_ACCESS_SECRET'], message: 'Each secret must be different' });
     }
     if (env.ERP_ADAPTER === 'http' && !env.ERP_BASE_URL) {
       ctx.addIssue({ code: 'custom', path: ['ERP_BASE_URL'], message: 'ERP_BASE_URL is required when ERP_ADAPTER=http' });

@@ -14,6 +14,7 @@ import type { Response } from 'express';
  */
 export type ErrorCode =
   | 'VALIDATION_FAILED'
+  | 'PAYLOAD_TOO_LARGE'
   | 'UNAUTHENTICATED'
   | 'FORBIDDEN'
   | 'NOT_FOUND'
@@ -29,6 +30,7 @@ export type ErrorCode =
   | 'OTP_COOLDOWN'
   | 'INVALID_CREDENTIALS'
   | 'ACCOUNT_SUSPENDED'
+  | 'ACCOUNT_LOCKED'
   | 'SESSION_EXPIRED'
   | 'ERP_UNAVAILABLE'
   | 'ERP_NOT_CONFIGURED'
@@ -82,6 +84,15 @@ export class AllExceptionsFilter implements ExceptionFilter {
             : String((raw as { message: unknown }).message)
           : String(raw);
       return res.status(status).json({ error: { code, message } });
+    }
+
+    // body-parser errors (oversized or malformed bodies) are client errors, not 500s.
+    const bp = exception as { type?: string; status?: number };
+    if (bp && typeof bp.status === 'number' && bp.status >= 400 && bp.status < 500 && typeof bp.type === 'string') {
+      const tooLarge = bp.type === 'entity.too.large';
+      return res
+        .status(tooLarge ? 413 : 400)
+        .json({ error: { code: tooLarge ? 'PAYLOAD_TOO_LARGE' : 'VALIDATION_FAILED', message: tooLarge ? 'Request body too large' : 'Malformed request body' } });
     }
 
     // Never leak internals. Log without request bodies (may contain OTPs/passwords).

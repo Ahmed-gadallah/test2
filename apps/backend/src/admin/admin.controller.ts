@@ -12,6 +12,11 @@ import { ErpAdapter } from '../erp/erp.adapter';
 import { toView } from '../redemption/redemption.service';
 import { AdminGuard, AdminPrincipal, CurrentAdmin, hashAdminPassword, Roles } from './admin-auth';
 
+/** ERP customer ids are numeric (customer_0.id). Anything else is rejected before it can reach an ERP URL or query. */
+function assertErpId(id: string) {
+  if (!/^\d{1,12}$/.test(id)) throw new AppError('VALIDATION_FAILED', HttpStatus.BAD_REQUEST, 'Invalid customer id');
+}
+
 class CustomerSearchQuery {
   @IsOptional() @IsString() @MaxLength(32) mobile?: string;
   @IsOptional() @Matches(/^\d{1,12}$/) customerId?: string;
@@ -75,6 +80,7 @@ export class AdminController {
   @Get('customers/:erpCustomerId/points')
   @Roles('super_admin', 'customer_support')
   async points(@CurrentAdmin() a: AdminPrincipal, @Param('erpCustomerId') id: string, @Query() q: PageQuery) {
+    assertErpId(id);
     await this.audit.log({ actorType: 'admin', actorId: a.adminId, action: 'customer.view_points', resourceType: 'customer', resourceId: id });
     const [balance, history] = await Promise.all([fromErp(() => this.erp.getPointsBalance(id)), fromErp(() => this.erp.getPointsHistory(id, q.cursor ?? null, q.limit))]);
     return { data: { balance, history: history.items }, meta: { nextCursor: history.nextCursor } };
@@ -83,6 +89,7 @@ export class AdminController {
   @Get('customers/:erpCustomerId/invoices')
   @Roles('super_admin', 'customer_support')
   async invoices(@CurrentAdmin() a: AdminPrincipal, @Param('erpCustomerId') id: string, @Query() q: PageQuery) {
+    assertErpId(id);
     await this.audit.log({ actorType: 'admin', actorId: a.adminId, action: 'customer.view_invoices', resourceType: 'customer', resourceId: id });
     const page = await fromErp(() => this.erp.listInvoices(id, q.cursor ?? null, q.limit));
     return { data: page.items, meta: { nextCursor: page.nextCursor } };

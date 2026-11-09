@@ -10,8 +10,12 @@ import { Env } from './config/env';
 export async function createApp(env: Env): Promise<INestApplication> {
   const app = await NestFactory.create<NestExpressApplication>(AppModule.forRoot(env), {
     logger: env.NODE_ENV === 'test' ? ['error'] : ['log', 'warn', 'error'],
+    bodyParser: false,
   });
-  app.set('trust proxy', 1);
+  // Only trust X-Forwarded-For from the configured number of proxy hops (rate limits key on the client IP).
+  app.set('trust proxy', env.TRUST_PROXY_HOPS > 0 ? env.TRUST_PROXY_HOPS : false);
+  app.useBodyParser('json', { limit: env.BODY_LIMIT });
+  app.useBodyParser('urlencoded', { limit: env.BODY_LIMIT, extended: false });
   app.use(helmet());
   app.enableCors({ origin: env.CORS_ORIGINS === '*' ? true : env.CORS_ORIGINS.split(',').map((s) => s.trim()) });
   app.setGlobalPrefix('api/v1');

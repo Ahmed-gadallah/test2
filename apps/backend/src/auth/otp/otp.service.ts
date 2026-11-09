@@ -28,7 +28,7 @@ export class OtpService {
 
   /** OTPs are short-lived and attempt-limited, so a keyed HMAC is sufficient and constant-time comparable. */
   private hash(mobile: string, purpose: Purpose, code: string) {
-    return createHmac('sha256', this.env.JWT_REFRESH_SECRET).update(`${mobile}|${purpose}|${code}`).digest('hex');
+    return createHmac('sha256', this.env.OTP_HASH_SECRET).update(`${mobile}|${purpose}|${code}`).digest('hex');
   }
 
   async issue(mobile: string, purpose: Purpose, ip: string | null): Promise<{ expiresInSeconds: number; resendAfterSeconds: number; channel: string }> {

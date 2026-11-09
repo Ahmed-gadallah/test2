@@ -2,7 +2,7 @@ import { HttpStatus, Inject, Injectable, Logger } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { hash as argonHash, verify as argonVerify } from '@node-rs/argon2';
 import { createHash, randomBytes } from 'node:crypto';
-import { and, eq, isNull } from 'drizzle-orm';
+import { and, eq, isNull, sql } from 'drizzle-orm';
 import { AppError } from '../common/errors';
 import { maskMobile, normalizeSaudiMobile } from '../common/phone';
 import { ENV, Env } from '../config/env';
@@ -131,7 +131,7 @@ export class AuthService {
 
   private async readVerification(token: string, purpose: VerificationClaims['purpose']): Promise<VerificationClaims> {
     try {
-      const c = await this.jwt.verifyAsync<VerificationClaims>(token, { secret: this.env.JWT_ACCESS_SECRET, audience: 'zaad-verify' });
+      const c = await this.jwt.verifyAsync<VerificationClaims>(token, { secret: this.env.JWT_ACCESS_SECRET, audience: 'zaad-verify', algorithms: ['HS256'] });
       if (c.purpose !== purpose) throw new Error('purpose mismatch');
       return c;
     } catch {
@@ -171,11 +171,36 @@ export class AuthService {
   async login(input: { mobile: string; password: string; deviceId: string; platform: 'android' | 'ios' | 'web' }) {
     const mobile = normalizeSaudiMobile(input.mobile);
     const [user] = mobile ? await this.db.select().from(users).where(eq(users.mobileNumber, mobile)).limit(1) : [];
+    // Per-account lockout: stops password guessing spread across many IPs (the per-IP limit can't).
+    if (user?.lockedUntil && user.lockedUntil.getTime() > Date.now()) {
+      const retryAfterSeconds = Math.ceil((user.lockedUntil.getTime() - Date.now()) / 1000);
+      throw new AppError('ACCOUNT_LOCKED', HttpStatus.TOO_MANY_REQUESTS, 'Too many failed attempts. Try again later or reset your password.', { retryAfterSeconds });
+    }
     const ok = await argonVerify(user?.passwordHash ?? (await DUMMY_HASH_PROMISE), input.password);
-    if (!user || !ok) throw new AppError('INVALID_CREDENTIALS', HttpStatus.UNAUTHORIZED, 'Incorrect mobile number or password');
+    if (!user || !ok) {
+      if (user) await this.recordFailedLogin(user.id);
+      throw new AppError('INVALID_CREDENTIALS', HttpStatus.UNAUTHORIZED, 'Incorrect mobile number or password');
+    }
     if (user.accountStatus !== 'active') throw new AppError('ACCOUNT_SUSPENDED', HttpStatus.FORBIDDEN);
-    await this.db.update(users).set({ lastLoginAt: new Date() }).where(eq(users.id, user.id));
+    await this.db.update(users).set({ lastLoginAt: new Date(), failedLoginCount: 0, lockedUntil: null }).where(eq(users.id, user.id));
     return this.issueTokens(user.id, user.erpCustomerId, input.deviceId, input.platform);
+  }
+
+  /** Atomic increment; locks the account when the threshold is reached, then restarts the count. */
+  private async recordFailedLogin(userId: string) {
+    const max = this.env.LOGIN_MAX_FAILURES;
+    const lockMs = this.env.LOGIN_LOCK_MINUTES * 60_000;
+    const [row] = await this.db
+      .update(users)
+      .set({
+        failedLoginCount: sql`case when ${users.failedLoginCount} + 1 >= ${max} then 0 else ${users.failedLoginCount} + 1 end`,
+        lockedUntil: sql`case when ${users.failedLoginCount} + 1 >= ${max} then now() + (${lockMs} || ' milliseconds')::interval else ${users.lockedUntil} end`,
+      })
+      .where(eq(users.id, userId))
+      .returning({ lockedUntil: users.lockedUntil });
+    if (row?.lockedUntil && row.lockedUntil.getTime() > Date.now()) {
+      await this.audit.log({ actorType: 'system', action: 'customer.locked_out', resourceType: 'user', resourceId: userId });
+    }
   }
 
   /** Refresh token format: "<sessionId>.<secret>". Only sha256(token) is stored. Rotated on every use. */
@@ -220,7 +245,8 @@ export class AuthService {
     const passwordHash = await argonHash(password, ARGON);
     await this.db.transaction(async (tx) => {
       if (!(await this.otp.consume(claims.otpId, tx))) throw new AppError('OTP_EXPIRED', HttpStatus.BAD_REQUEST, 'Verification already used');
-      const [u] = await tx.update(users).set({ passwordHash, updatedAt: new Date() }).where(eq(users.mobileNumber, claims.mobile)).returning({ id: users.id });
+      // A verified OTP proves possession of the phone, so it also clears a lockout.
+      const [u] = await tx.update(users).set({ passwordHash, failedLoginCount: 0, lockedUntil: null, updatedAt: new Date() }).where(eq(users.mobileNumber, claims.mobile)).returning({ id: users.id });
       if (!u) throw new AppError('OTP_EXPIRED', HttpStatus.BAD_REQUEST);
       // A password reset signs out every device.
       await tx.update(refreshSessions).set({ revokedAt: new Date() }).where(and(eq(refreshSessions.userId, u.id), isNull(refreshSessions.revokedAt)));

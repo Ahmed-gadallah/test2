@@ -34,7 +34,7 @@ export class CustomerAuthGuard implements CanActivate {
 
     let claims: AccessClaims;
     try {
-      claims = await this.jwt.verifyAsync<AccessClaims>(token, { secret: this.env.JWT_ACCESS_SECRET, audience: 'zaad-customer' });
+      claims = await this.jwt.verifyAsync<AccessClaims>(token, { secret: this.env.JWT_ACCESS_SECRET, audience: 'zaad-customer', algorithms: ['HS256'] });
     } catch {
       throw new AppError('SESSION_EXPIRED', HttpStatus.UNAUTHORIZED);
     }

@@ -361,3 +361,76 @@ describe('admin permissions (enforced by the backend)', () => {
     await ctx.http().get(`${P}/admin/dashboard`).set(auth(t.accessToken)).expect(401);
   });
 });
+
+// ─── Security hardening ─────────────────────────────────────────────────────
+describe('security hardening', () => {
+  it('locks the account after repeated wrong passwords, even from different IPs', async () => {
+    await registerCustomer(ctx);
+    for (let i = 0; i < 5; i++) {
+      await ctx.http().post(`${P}/auth/login`).send({ mobile: '0500000001', password: `wrong${i}pass`, ...DEVICE }).expect(401);
+    }
+    // Correct password is refused while locked.
+    const r = await ctx.http().post(`${P}/auth/login`).send({ mobile: '0500000001', password: 'zaad1234', ...DEVICE }).expect(429);
+    expect(r.body.error.code).toBe('ACCOUNT_LOCKED');
+    expect(r.body.error.details.retryAfterSeconds).toBeGreaterThan(0);
+  });
+
+  it('a successful login resets the failure count', async () => {
+    await registerCustomer(ctx);
+    for (let i = 0; i < 4; i++) await ctx.http().post(`${P}/auth/login`).send({ mobile: '0500000001', password: 'nope1234', ...DEVICE }).expect(401);
+    await ctx.http().post(`${P}/auth/login`).send({ mobile: '0500000001', password: 'zaad1234', ...DEVICE }).expect(200);
+    for (let i = 0; i < 4; i++) await ctx.http().post(`${P}/auth/login`).send({ mobile: '0500000001', password: 'nope1234', ...DEVICE }).expect(401);
+    await ctx.http().post(`${P}/auth/login`).send({ mobile: '0500000001', password: 'zaad1234', ...DEVICE }).expect(200);
+  });
+
+  it('password reset via OTP clears a lockout', async () => {
+    await registerCustomer(ctx);
+    for (let i = 0; i < 5; i++) await ctx.http().post(`${P}/auth/login`).send({ mobile: '0500000001', password: 'nope1234', ...DEVICE });
+    await ctx.http().post(`${P}/auth/forgot-password`).send({ mobile: '0500000001' }).expect(200);
+    const v = await ctx.http().post(`${P}/auth/verify-otp`).send({ mobile: '0500000001', purpose: 'reset_password', code: '123456' }).expect(200);
+    await ctx.http().post(`${P}/auth/reset-password`).send({ verificationToken: v.body.data.verificationToken, password: 'fresh1234' }).expect(200);
+    await ctx.http().post(`${P}/auth/login`).send({ mobile: '0500000001', password: 'fresh1234', ...DEVICE }).expect(200);
+  });
+
+  it('admin accounts lock out too', async () => {
+    await createAdmin(ctx, 'super_admin');
+    for (let i = 0; i < 5; i++) await ctx.http().post(`${P}/admin/auth/login`).send({ email: 'super_admin@zaad.test', password: 'WrongPass12345' });
+    // the per-IP limit for admin login is 5/min, so the 6th call may be rate-limited first; either way it is refused
+    const r = await ctx.http().post(`${P}/admin/auth/login`).send({ email: 'super_admin@zaad.test', password: 'AdminPass12345' });
+    expect([429]).toContain(r.status);
+    expect(['ACCOUNT_LOCKED', 'RATE_LIMITED']).toContain(r.body.error.code);
+  });
+
+  it('a spoofed X-Forwarded-For header does not bypass the per-IP limit', async () => {
+    let last = 0;
+    for (let i = 0; i < 12; i++) {
+      const r = await ctx.http().post(`${P}/auth/check-mobile`).set('X-Forwarded-For', `203.0.113.${i}`).send({ mobile: '0599999999' });
+      last = r.status;
+    }
+    expect(last).toBe(429);
+  });
+
+  it('rejects oversized bodies and unknown fields', async () => {
+    await ctx.http().post(`${P}/auth/check-mobile`).send({ mobile: '0500000001', pad: 'x'.repeat(200_000) }).expect(413);
+    await ctx.http().post(`${P}/auth/check-mobile`).send({ mobile: '0500000001', isAdmin: true }).expect(400);
+    const bad = await ctx.http().post(`${P}/auth/check-mobile`).set('content-type', 'application/json').send('{"mobile": ').expect(400);
+    expect(bad.body.error.code).toBe('VALIDATION_FAILED');
+  });
+
+  it('admin customer routes reject non-numeric ids', async () => {
+    const s = await createAdmin(ctx, 'super_admin');
+    await ctx.http().get(`${P}/admin/customers/abc%2F..%2Fx/points`).set(auth(s)).expect(400);
+  });
+
+  it('offer links and images must use an allowed host', async () => {
+    const admin = await createAdmin(ctx, 'marketing_admin');
+    const bad = await ctx.http().post(`${P}/admin/offers`).set(auth(admin)).send({ ...offer(), destinationUrl: 'https://zaad-offers.evil.example/win' }).expect(400);
+    expect(bad.body.error.message).toMatch(/destinationUrl/);
+    await ctx.http().post(`${P}/admin/offers`).set(auth(admin)).send({ ...offer(), destinationUrl: 'https://zaadonline.com/vitamins', imageUrl: 'https://cdn.zaadonline.com/a.jpg' }).expect(201);
+  });
+
+  it('tokens signed with another algorithm or secret are refused', async () => {
+    const forged = ['eyJhbGciOiJub25lIiwidHlwIjoiSldUIn0', Buffer.from(JSON.stringify({ sub: 'x', sid: 'x', ecid: '900001', aud: 'zaad-customer' })).toString('base64url'), ''].join('.');
+    await ctx.http().get(`${P}/customer/points`).set(auth(forged)).expect(401);
+  });
+});

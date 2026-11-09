@@ -58,5 +58,8 @@
     "setupFiles": [
       "<rootDir>/test/setup-env.ts"
     ]
+  },
+  "overrides": {
+    "multer": "^2.5.0"
   }
 }

@@ -55,7 +55,7 @@ export class AdminGuard implements CanActivate {
     if (!token) throw new AppError('UNAUTHENTICATED', HttpStatus.UNAUTHORIZED);
     let claims: { sub: string };
     try {
-      claims = await this.jwt.verifyAsync(token, { secret: this.env.JWT_ADMIN_SECRET, audience: 'zaad-admin' });
+      claims = await this.jwt.verifyAsync(token, { secret: this.env.JWT_ADMIN_SECRET, audience: 'zaad-admin', algorithms: ['HS256'] });
     } catch {
       throw new AppError('SESSION_EXPIRED', HttpStatus.UNAUTHORIZED);
     }
@@ -95,13 +95,28 @@ export class AdminAuthController {
   @Throttle({ default: { limit: 5, ttl: 60_000 } })
   async login(@Body() dto: AdminLoginDto, @Ip() ip: string) {
     const [admin] = await this.db.select().from(adminUsers).where(eq(sql`lower(${adminUsers.email})`, dto.email.toLowerCase()));
+    if (admin?.lockedUntil && admin.lockedUntil.getTime() > Date.now()) {
+      throw new AppError('ACCOUNT_LOCKED', HttpStatus.TOO_MANY_REQUESTS, 'Too many failed attempts. Try again later.');
+    }
     const ok = await argonVerify(admin?.passwordHash ?? (await DUMMY), dto.password);
     if (!admin || !ok || !admin.active) {
+      if (admin) {
+        const max = this.env.LOGIN_MAX_FAILURES;
+        const lockMs = this.env.LOGIN_LOCK_MINUTES * 60_000;
+        await this.db
+          .update(adminUsers)
+          .set({
+            failedLoginCount: sql`case when ${adminUsers.failedLoginCount} + 1 >= ${max} then 0 else ${adminUsers.failedLoginCount} + 1 end`,
+            lockedUntil: sql`case when ${adminUsers.failedLoginCount} + 1 >= ${max} then now() + (${lockMs} || ' milliseconds')::interval else ${adminUsers.lockedUntil} end`,
+          })
+          .where(eq(adminUsers.id, admin.id));
+      }
       await this.audit.log({ actorType: 'admin', actorId: admin?.id ?? null, action: 'admin.login_failed', resourceType: 'admin', ipAddress: ip });
       throw new AppError('INVALID_CREDENTIALS', HttpStatus.UNAUTHORIZED);
     }
+    await this.db.update(adminUsers).set({ failedLoginCount: 0, lockedUntil: null }).where(eq(adminUsers.id, admin.id));
     await this.audit.log({ actorType: 'admin', actorId: admin.id, action: 'admin.login', resourceType: 'admin', resourceId: admin.id, ipAddress: ip });
-    const accessToken = await this.jwt.signAsync({ sub: admin.id }, { secret: this.env.JWT_ADMIN_SECRET, audience: 'zaad-admin', expiresIn: '8h' });
+    const accessToken = await this.jwt.signAsync({ sub: admin.id }, { secret: this.env.JWT_ADMIN_SECRET, audience: 'zaad-admin', expiresIn: this.env.ADMIN_TOKEN_TTL_SECONDS });
     return { data: { accessToken, admin: { id: admin.id, name: admin.name, email: admin.email, role: admin.role } } };
   }
 }
