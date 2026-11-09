@@ -550,4 +550,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get clearSearch => 'Clear search';
+
+  @override
+  String get branchLocation => 'Location';
 }

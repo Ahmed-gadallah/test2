@@ -271,30 +271,35 @@ class _BranchDetail extends StatelessWidget {
           ),
         ),
         const SizedBox(height: ZaadSpace.lg),
-        FadeSlideIn(
-          index: 1,
-          child: Row(
-            children: [
-              Expanded(
-                child: tel == null
-                    ? FilledButton.icon(onPressed: null, icon: const Icon(Icons.phone_disabled_outlined), label: Text(t.phoneUnavailable, maxLines: 1, overflow: TextOverflow.ellipsis))
-                    : ExternalLink(
-                        uri: tel,
-                        builder: (open) => FilledButton.icon(key: const Key('call-branch'), onPressed: open, icon: const Icon(Icons.call_rounded), label: Text(t.callBranch)),
+        // Only the actions that exist are shown; what is missing is stated in the details below.
+        if (tel != null || maps != null)
+          FadeSlideIn(
+            index: 1,
+            child: Row(
+              children: [
+                if (tel != null)
+                  Expanded(
+                    child: ExternalLink(
+                      uri: tel,
+                      builder: (open) => FilledButton.icon(key: const Key('call-branch'), onPressed: open, icon: const Icon(Icons.call_rounded), label: Text(t.callBranch)),
+                    ),
+                  ),
+                if (tel != null && maps != null) const SizedBox(width: 12),
+                if (maps != null)
+                  Expanded(
+                    child: ExternalLink(
+                      uri: maps,
+                      builder: (open) => (tel == null ? FilledButton.icon : OutlinedButton.icon)(
+                        key: const Key('get-directions'),
+                        onPressed: open,
+                        icon: const Icon(Icons.directions_rounded),
+                        label: Text(t.getDirections),
                       ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: maps == null
-                    ? OutlinedButton.icon(onPressed: null, icon: const Icon(Icons.location_off_outlined), label: Text(t.locationUnavailable, maxLines: 1, overflow: TextOverflow.ellipsis))
-                    : ExternalLink(
-                        uri: maps,
-                        builder: (open) => OutlinedButton.icon(key: const Key('get-directions'), onPressed: open, icon: const Icon(Icons.directions_rounded), label: Text(t.getDirections)),
-                      ),
-              ),
-            ],
+                    ),
+                  ),
+              ],
+            ),
           ),
-        ),
         const SizedBox(height: ZaadSpace.lg),
         FadeSlideIn(
           index: 2,
@@ -316,6 +321,7 @@ class _BranchDetail extends StatelessWidget {
                       trailing: const SizedBox.shrink(),
                     ),
                   ),
+            if (maps == null) InfoRow(icon: Icons.location_off_outlined, title: t.branchLocation, subtitle: t.locationUnavailable),
             if (b.notes != null) InfoRow(icon: Icons.info_outline_rounded, title: t.branchNotes, subtitle: b.notes),
           ]),
         ),

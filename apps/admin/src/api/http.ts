@@ -2,6 +2,9 @@ import type {
   Admin,
   AdminApi,
   AuditEntry,
+  Branch,
+  BranchImportReport,
+  BranchInput,
   CampaignResult,
   CampaignStat,
   CustomerPoints,
@@ -30,14 +33,15 @@ export class HttpAdminApi implements AdminApi {
 
   private async req<T>(method: string, path: string, body?: unknown, auth = true): Promise<{ data: T; meta?: Record<string, unknown> }> {
     let res: Response;
+    const form = body instanceof FormData;
     try {
       res = await fetch(this.baseUrl + path, {
         method,
         headers: {
-          ...(body !== undefined ? { 'Content-Type': 'application/json' } : {}),
+          ...(body !== undefined && !form ? { 'Content-Type': 'application/json' } : {}),
           ...(auth && this.getToken() ? { Authorization: `Bearer ${this.getToken()}` } : {}),
         },
-        body: body !== undefined ? JSON.stringify(body) : undefined,
+        body: form ? body : body !== undefined ? JSON.stringify(body) : undefined,
       });
     } catch {
       throw new ApiError('NETWORK', 0);
@@ -92,6 +96,16 @@ export class HttpAdminApi implements AdminApi {
   admins() { return this.data<Admin[]>('GET', '/admin/admins'); }
   createAdmin(input: { name: string; email: string; password: string; role: Role }) { return this.data<Admin>('POST', '/admin/admins', input); }
   updateAdmin(id: string, patch: { role?: Role; active?: boolean }) { return this.data<Admin>('PATCH', `/admin/admins/${id}`, patch); }
+
+  branches() { return this.data<Branch[]>('GET', '/admin/branches'); }
+  // Empty strings are sent as-is: the backend stores them as "not provided" (null).
+  createBranch(input: BranchInput & { branchId: number }) { return this.data<Branch>('POST', '/admin/branches', input); }
+  updateBranch(id: number, patch: Partial<BranchInput>) { return this.data<Branch>('PATCH', `/admin/branches/${id}`, patch); }
+  importBranches(file: File, dryRun: boolean) {
+    const fd = new FormData();
+    fd.append('file', file);
+    return this.data<BranchImportReport>('POST', `/admin/branches/import?dryRun=${dryRun}`, fd);
+  }
 }
 
 /** Drop empty optional strings so the backend's validators don't reject "" as a URL. */

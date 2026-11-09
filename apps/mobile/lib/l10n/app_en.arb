@@ -184,5 +184,6 @@
   "branchNotes": "Notes",
   "phoneUnavailable": "Phone number not available",
   "locationUnavailable": "Location not available",
-  "clearSearch": "Clear search"
+  "clearSearch": "Clear search",
+  "branchLocation": "Location"
 }

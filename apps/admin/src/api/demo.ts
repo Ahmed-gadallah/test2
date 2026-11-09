@@ -9,6 +9,8 @@ import type {
   Admin,
   AdminApi,
   AuditEntry,
+  Branch,
+  BranchInput,
   CampaignStat,
   CustomerResult,
   InvoiceDetail,
@@ -20,6 +22,8 @@ import type {
   Role,
 } from './types';
 import { ApiError } from './types';
+// Generated from the real branches sheet by the backend (`npm run export:branches-demo`), same parser as the import.
+import demoBranches from './demo-branches.json';
 
 const DAY = 86_400_000;
 const now = () => Date.now();
@@ -123,6 +127,7 @@ export class DemoAdminApi implements AdminApi {
   private campaignList: CampaignStat[] = [];
   private audit: AuditEntry[] = [];
   private redemptionList: Redemption[];
+  private branchList: Branch[] = (demoBranches as Branch[]).map((b) => ({ ...b }));
 
   constructor() {
     const mk = (titleAr: string, titleEn: string, dAr: string, dEn: string, start: number, end: number, stored: OfferStatus, published: boolean): Offer => {
@@ -342,4 +347,53 @@ export class DemoAdminApi implements AdminApi {
     this.log('admin', me.id, 'admin.updated', 'admin', id, { ...patch });
     return { ...a };
   }
+
+  // ── branches (same rules as the backend; the sheet import itself needs the real backend) ──
+  async branches() { await wait(); this.need('super_admin', 'marketing_admin'); return this.branchList.map((b) => ({ ...b })); }
+  async createBranch(input: BranchInput & { branchId: number }) {
+    await wait();
+    const me = this.need('super_admin', 'marketing_admin');
+    if (this.branchList.some((b) => b.id === input.branchId)) throw new ApiError('VALIDATION_FAILED', 409, `Branch ID ${input.branchId} already exists`);
+    const { branchId, ...rest } = input;
+    const b: Branch = { id: branchId, ...cleanBranch(rest) } as Branch;
+    this.branchList.push(b);
+    this.log('admin', me.id, 'branch.create', 'branch', String(b.id));
+    return { ...b };
+  }
+  async updateBranch(id: number, patch: Partial<BranchInput>) {
+    await wait();
+    const me = this.need('super_admin', 'marketing_admin');
+    const b = this.branchList.find((x) => x.id === id);
+    if (!b) throw new ApiError('NOT_FOUND', 404);
+    Object.assign(b, cleanBranch(patch), { updatedAt: iso(now()) });
+    this.log('admin', me.id, 'branch.update', 'branch', String(id), { fields: Object.keys(patch) });
+    return { ...b };
+  }
+  async importBranches(): Promise<never> {
+    await wait();
+    this.need('super_admin', 'marketing_admin');
+    throw new ApiError('DEMO_IMPORT', 400);
+  }
+}
+
+/** Mirrors the backend: trims, '' → null, one Saudi phone, https Google Maps links only. */
+function cleanBranch<T extends Partial<BranchInput>>(p: T): T {
+  const out: Record<string, unknown> = { ...p };
+  for (const [k, v] of Object.entries(p)) if (typeof v === 'string') out[k] = v.trim() === '' ? null : v.trim().replace(/\s+/g, ' ');
+  for (const k of ['nameAr', 'city', 'addressAr'] as const) if (k in p && !out[k]) throw new ApiError('VALIDATION_FAILED', 400, `${k} is required`);
+  if (typeof out.phone === 'string') {
+    const d = out.phone.replace(/\D/g, '').replace(/^966/, '').replace(/^0/, '');
+    if (/^5\d{8}$/.test(d) || /^1[1-7]\d{7}$/.test(d)) out.phone = `+966${d}`;
+    else if (/^92\d{7}$/.test(d) || /^800\d{7}$/.test(d)) out.phone = d;
+    else throw new ApiError('VALIDATION_FAILED', 400, 'Invalid phone number');
+  }
+  if (typeof out.mapsUrl === 'string') {
+    let ok = false;
+    try {
+      const u = new URL(out.mapsUrl);
+      ok = u.protocol === 'https:' && (u.hostname === 'maps.app.goo.gl' || (u.hostname === 'goo.gl' && u.pathname.startsWith('/maps/')) || u.hostname === 'maps.google.com' || (/(^|\.)google\.com(\.sa)?$/.test(u.hostname) && u.pathname.startsWith('/maps')));
+    } catch { ok = false; }
+    if (!ok) throw new ApiError('VALIDATION_FAILED', 400, 'Location must be an https Google Maps link');
+  }
+  return out as T;
 }

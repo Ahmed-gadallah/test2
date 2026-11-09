@@ -6,12 +6,13 @@ import { isDemo, useSession } from '../session';
 import { Icon } from './ui';
 
 /** Navigation entries and which roles see them. The backend enforces the same rules. */
-export const NAV: { to: string; key: 'overview' | 'offers' | 'campaigns' | 'customers' | 'redemptions' | 'admins' | 'audit'; roles: Role[] }[] = [
+export const NAV: { to: string; key: 'overview' | 'offers' | 'campaigns' | 'customers' | 'redemptions' | 'branches' | 'admins' | 'audit'; roles: Role[] }[] = [
   { to: '/', key: 'overview', roles: ['super_admin', 'marketing_admin', 'customer_support'] },
   { to: '/offers', key: 'offers', roles: ['super_admin', 'marketing_admin'] },
   { to: '/campaigns', key: 'campaigns', roles: ['super_admin', 'marketing_admin'] },
   { to: '/customers', key: 'customers', roles: ['super_admin', 'customer_support'] },
   { to: '/redemptions', key: 'redemptions', roles: ['super_admin', 'customer_support'] },
+  { to: '/branches', key: 'branches', roles: ['super_admin', 'marketing_admin'] },
   { to: '/admins', key: 'admins', roles: ['super_admin'] },
   { to: '/audit', key: 'audit', roles: ['super_admin'] },
 ];

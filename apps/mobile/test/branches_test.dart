@@ -129,12 +129,20 @@ void main() {
     expect(maps.uri.toString(), 'https://maps.app.goo.gl/gyN2GtVJuXu4Hjk57');
   });
 
-  testWidgets('details without phone/link: disabled buttons with a clear message', (tester) async {
+  testWidgets('details without phone/link: no dead buttons, a clear message instead', (tester) async {
     await pump(tester, initial: '/branches/7');
     expect(find.byKey(const Key('call-branch')), findsNothing);
     expect(find.byKey(const Key('get-directions')), findsNothing);
     expect(find.text('الموقع غير متوفر'), findsOneWidget);
-    expect(find.text('رقم الهاتف غير متوفر'), findsNWidgets(2));
+    expect(find.text('رقم الهاتف غير متوفر'), findsOneWidget);
+    expect(find.byType(Link), findsNothing);
+  });
+
+  testWidgets('details with a link but no phone: Directions only', (tester) async {
+    await pump(tester, initial: '/branches/7', data: [_b(id: 7, phone: null)]);
+    expect(find.byKey(const Key('call-branch')), findsNothing);
+    expect(find.byKey(const Key('get-directions')), findsOneWidget);
+    expect(linkUris(tester).map((u) => u.toString()), ['https://maps.app.goo.gl/BB8rfs9zdyUzd7a38']);
   });
 
   testWidgets('unknown or inactive branch id → not found (the API never returns inactive branches)', (tester) async {

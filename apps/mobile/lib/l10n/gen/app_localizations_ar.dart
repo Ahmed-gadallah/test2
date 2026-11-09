@@ -546,4 +546,7 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get clearSearch => 'مسح البحث';
+
+  @override
+  String get branchLocation => 'الموقع';
 }

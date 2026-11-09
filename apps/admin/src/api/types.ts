@@ -135,6 +135,40 @@ export interface AuditEntry {
   createdAt: string;
 }
 
+/** Branch directory (Branch Locator). `id` is the sheet's Branch ID (= ERP branch id). ONE phone per branch. */
+export interface BranchInput {
+  nameAr: string;
+  nameEn: string | null;
+  city: string;
+  district: string | null;
+  addressAr: string;
+  addressEn: string | null;
+  phone: string | null;
+  mapsUrl: string | null;
+  notes: string | null;
+  active: boolean;
+}
+export interface Branch extends BranchInput {
+  id: number;
+  updatedAt?: string;
+}
+export interface ImportIssue {
+  row: number;
+  branchId?: number;
+  field?: string;
+  message: string;
+}
+export interface BranchImportReport {
+  dryRun: boolean;
+  applied: boolean;
+  created: number[];
+  updated: number[];
+  unchanged: number[];
+  notInFile: number[];
+  errors: ImportIssue[];
+  warnings: ImportIssue[];
+}
+
 export class ApiError extends Error {
   readonly code: string;
   readonly status: number;
@@ -170,4 +204,9 @@ export interface AdminApi {
   admins(): Promise<Admin[]>;
   createAdmin(input: { name: string; email: string; password: string; role: Role }): Promise<Admin>;
   updateAdmin(id: string, patch: { role?: Role; active?: boolean }): Promise<Admin>;
+
+  branches(): Promise<Branch[]>;
+  createBranch(input: BranchInput & { branchId: number }): Promise<Branch>;
+  updateBranch(id: number, patch: Partial<BranchInput>): Promise<Branch>;
+  importBranches(file: File, dryRun: boolean): Promise<BranchImportReport>;
 }

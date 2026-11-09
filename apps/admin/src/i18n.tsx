@@ -13,7 +13,7 @@ const ar = {
   logout: 'تسجيل الخروج',
   nav: {
     overview: 'نظرة عامة', offers: 'العروض', campaigns: 'الحملات والإشعارات', customers: 'العملاء',
-    redemptions: 'طلبات الاستبدال', admins: 'المشرفون', audit: 'سجل العمليات',
+    redemptions: 'طلبات الاستبدال', branches: 'الفروع', admins: 'المشرفون', audit: 'سجل العمليات',
   },
   roles: { super_admin: 'مدير النظام', marketing_admin: 'مسؤول تسويق', customer_support: 'خدمة العملاء' },
   overview: {
@@ -62,9 +62,24 @@ const ar = {
     deactivate: 'إيقاف', activate: 'تفعيل', created: 'تمت إضافة المشرف', you: '(أنت)', pwRule: '12 حرفًا على الأقل، حروف وأرقام',
     permissions: {
       super_admin: 'كل الصلاحيات، بما فيها إدارة المشرفين وسجل العمليات.',
-      marketing_admin: 'العروض والحملات والإشعارات فقط. لا يرى بيانات العملاء.',
+      marketing_admin: 'العروض والحملات والإشعارات وبيانات الفروع فقط. لا يرى بيانات العملاء.',
       customer_support: 'عرض بيانات العملاء والنقاط والفواتير وطلبات الاستبدال — قراءة فقط.',
     },
+  },
+  branches: {
+    title: 'الفروع', sub: 'بيانات "فروع زاد" التي تظهر للعملاء في التطبيق. الفروع غير النشطة لا تظهر للعملاء.',
+    add: 'إضافة فرع', edit: 'تعديل الفرع', import: 'استيراد من Excel', total: 'كل الفروع', active: 'نشط', inactive: 'غير نشط',
+    noPhone: 'بدون رقم هاتف', noLocation: 'بدون رابط موقع', all: 'الكل', missing: 'بيانات ناقصة', search: 'ابحث بالاسم أو الرقم أو المدينة أو الحي',
+    id: 'رقم الفرع', idHint: 'Branch ID من ملف الفروع (نفس رقم الفرع في ERP). لا يمكن تغييره لاحقًا.',
+    nameAr: 'اسم الفرع (عربي)', nameEn: 'اسم الفرع (إنجليزي)', city: 'المدينة', district: 'الحي / المنطقة',
+    addressAr: 'العنوان بالتفصيل (عربي)', addressEn: 'العنوان (إنجليزي)', phone: 'رقم هاتف الفرع', phoneHint: 'رقم واحد فقط للاتصال والتوصيل. اتركه فارغًا إن لم يوجد.',
+    maps: 'رابط الموقع (Google Maps)', mapsHint: 'رابط https من Google Maps كما هو. لا يتم استنتاج أي موقع بديل.', notes: 'ملاحظات (اختياري)',
+    status: 'الحالة', location: 'الموقع', open: 'فتح', empty: 'لا توجد فروع بعد. ابدأ باستيراد ملف الفروع.', noResults: 'لا توجد نتائج.',
+    activate: 'تفعيل', deactivate: 'إيقاف', saved: 'تم حفظ الفرع', created: 'تمت إضافة الفرع',
+    importTitle: 'استيراد ملف الفروع', importNote: 'ارفع ملف Excel (قالب فروع زاد). يتم الاستيراد برقم الفرع: إعادة رفع نفس الملف لا تكرر الفروع. أي خطأ في صف يوقف الاستيراد كله.',
+    chooseFile: 'اختر ملف .xlsx', check: 'فحص الملف', apply: 'تطبيق الاستيراد', applied: 'تم الاستيراد',
+    willCreate: 'فروع جديدة', willUpdate: 'فروع ستُحدَّث', unchanged: 'بدون تغيير', notInFile: 'موجودة في النظام وليست في الملف (لن تُحذف)',
+    errors: 'أخطاء — يجب تصحيحها في الملف', warnings: 'تنبيهات — سيتم الاستيراد مع ترك الحقل فارغًا', row: 'صف', reimportNote: 'ملاحظة: الاستيراد يكتب فوق أي تعديل يدوي على نفس الفرع، لأن الملف هو المصدر المعتمد.',
   },
   audit: { title: 'سجل العمليات', when: 'الوقت', actor: 'المنفّذ', action: 'العملية', resource: 'العنصر', system: 'النظام', customer: 'عميل' },
   common: { cancel: 'إلغاء', confirm: 'تأكيد', loading: 'جارٍ التحميل…', retry: 'إعادة المحاولة', close: 'إغلاق', create: 'إنشاء', sar: 'ر.س', actions: 'إجراءات' },
@@ -74,7 +89,7 @@ const ar = {
     FORBIDDEN: 'ليس لديك صلاحية لهذا الإجراء.', NOT_FOUND: 'غير موجود.', ERP_UNAVAILABLE: 'نظام ERP غير متاح حاليًا.',
     OFFER_INVALID_STATE: 'لا يمكن تنفيذ هذا الإجراء على العرض في حالته الحالية.', ACCOUNT_EXISTS: 'يوجد مشرف بهذا البريد.',
     INVALID_MOBILE: 'رقم جوال غير صحيح.', SESSION_EXPIRED: 'انتهت الجلسة. سجّل الدخول مجددًا.', UNAUTHENTICATED: 'انتهت الجلسة. سجّل الدخول مجددًا.',
-    VALIDATION_FAILED: 'بيانات غير صحيحة', generic: 'حدث خطأ غير متوقع.',
+    VALIDATION_FAILED: 'بيانات غير صحيحة', DEMO_IMPORT: 'استيراد ملف Excel يحتاج الخادم الحقيقي — غير متاح في وضع العرض. يمكنك تعديل الفروع وتفعيلها هنا.', generic: 'حدث خطأ غير متوقع.',
   },
 };
 
@@ -91,7 +106,7 @@ const en: Dict = {
   password: 'Password',
   demoAccounts: 'Demo accounts (password: Demo12345678)',
   logout: 'Sign out',
-  nav: { overview: 'Overview', offers: 'Offers', campaigns: 'Campaigns & notifications', customers: 'Customers', redemptions: 'Redemptions', admins: 'Administrators', audit: 'Audit log' },
+  nav: { overview: 'Overview', offers: 'Offers', campaigns: 'Campaigns & notifications', customers: 'Customers', redemptions: 'Redemptions', branches: 'Branches', admins: 'Administrators', audit: 'Audit log' },
   roles: { super_admin: 'Super admin', marketing_admin: 'Marketing admin', customer_support: 'Customer support' },
   overview: {
     title: 'Overview', registered: 'Registered customers', new7d: 'New in last 7 days', activeOffers: 'Active offers', scheduled: 'Scheduled', drafts: 'Drafts',
@@ -139,9 +154,24 @@ const en: Dict = {
     deactivate: 'Deactivate', activate: 'Activate', created: 'Administrator added', you: '(you)', pwRule: 'At least 12 characters, letters and digits',
     permissions: {
       super_admin: 'Everything, including administrators and the audit log.',
-      marketing_admin: 'Offers, campaigns and notifications only. Cannot see customer data.',
+      marketing_admin: 'Offers, campaigns, notifications and branch details only. Cannot see customer data.',
       customer_support: 'View customers, points, invoices and redemptions — read only.',
     },
+  },
+  branches: {
+    title: 'Branches', sub: 'The "Our Branches" directory customers see in the app. Inactive branches are hidden from customers.',
+    add: 'Add branch', edit: 'Edit branch', import: 'Import from Excel', total: 'All branches', active: 'Active', inactive: 'Inactive',
+    noPhone: 'No phone number', noLocation: 'No location link', all: 'All', missing: 'Missing data', search: 'Search by name, ID, city or district',
+    id: 'Branch ID', idHint: 'Branch ID from the branches sheet (same as the ERP branch id). Cannot be changed later.',
+    nameAr: 'Branch name (Arabic)', nameEn: 'Branch name (English)', city: 'City', district: 'District / area',
+    addressAr: 'Full address (Arabic)', addressEn: 'Address (English)', phone: 'Branch phone', phoneHint: 'ONE number for calls and delivery. Leave empty if there is none.',
+    maps: 'Location link (Google Maps)', mapsHint: 'An https Google Maps link, stored as-is. No other location is ever derived.', notes: 'Notes (optional)',
+    status: 'Status', location: 'Location', open: 'Open', empty: 'No branches yet. Start by importing the branches sheet.', noResults: 'No results.',
+    activate: 'Activate', deactivate: 'Deactivate', saved: 'Branch saved', created: 'Branch added',
+    importTitle: 'Import the branches sheet', importNote: 'Upload the Excel file (Zaad branches template). Rows are matched by Branch ID: uploading the same file again never duplicates branches. Any row error stops the whole import.',
+    chooseFile: 'Choose an .xlsx file', check: 'Check file', apply: 'Apply import', applied: 'Import applied',
+    willCreate: 'New branches', willUpdate: 'Branches to update', unchanged: 'Unchanged', notInFile: 'In the system but not in the file (kept, not deleted)',
+    errors: 'Errors — fix these in the file', warnings: 'Warnings — imported with the field left empty', row: 'Row', reimportNote: 'Note: importing overwrites manual edits to the same branch, because the sheet is the source of truth.',
   },
   audit: { title: 'Audit log', when: 'Time', actor: 'Actor', action: 'Action', resource: 'Resource', system: 'System', customer: 'Customer' },
   common: { cancel: 'Cancel', confirm: 'Confirm', loading: 'Loading…', retry: 'Retry', close: 'Close', create: 'Create', sar: 'SAR', actions: 'Actions' },
@@ -151,7 +181,7 @@ const en: Dict = {
     FORBIDDEN: 'You do not have permission for this action.', NOT_FOUND: 'Not found.', ERP_UNAVAILABLE: 'The ERP is unavailable right now.',
     OFFER_INVALID_STATE: 'This action is not allowed for the offer in its current state.', ACCOUNT_EXISTS: 'An administrator with this email already exists.',
     INVALID_MOBILE: 'Invalid mobile number.', SESSION_EXPIRED: 'Session expired. Please sign in again.', UNAUTHENTICATED: 'Session expired. Please sign in again.',
-    VALIDATION_FAILED: 'Invalid data', generic: 'Something went wrong.',
+    VALIDATION_FAILED: 'Invalid data', DEMO_IMPORT: 'Importing an Excel file needs the real backend — not available in the demo. You can still edit and activate branches here.', generic: 'Something went wrong.',
   },
 };
 

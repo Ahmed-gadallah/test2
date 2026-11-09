@@ -171,5 +171,6 @@
   "branchNotes": "ملاحظات",
   "phoneUnavailable": "رقم الهاتف غير متوفر",
   "locationUnavailable": "الموقع غير متوفر",
-  "clearSearch": "مسح البحث"
+  "clearSearch": "مسح البحث",
+  "branchLocation": "الموقع"
 }

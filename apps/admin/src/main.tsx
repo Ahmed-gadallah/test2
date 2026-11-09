@@ -7,6 +7,7 @@ import { Layout } from './components/Layout';
 import { Toaster } from './components/ui';
 import { I18nProvider } from './i18n';
 import { AdminsPage } from './pages/Admins';
+import { BranchesPage } from './pages/Branches';
 import { AuditPage } from './pages/Audit';
 import { CampaignsPage } from './pages/Campaigns';
 import { CustomerDetailPage, CustomersPage } from './pages/Customers';
@@ -46,6 +47,7 @@ function App() {
         <Route path="customers" element={<Guard roles={sup}><CustomersPage /></Guard>} />
         <Route path="customers/:id" element={<Guard roles={sup}><CustomerDetailPage /></Guard>} />
         <Route path="redemptions" element={<Guard roles={sup}><RedemptionsPage /></Guard>} />
+        <Route path="branches" element={<Guard roles={mkt}><BranchesPage /></Guard>} />
         <Route path="admins" element={<Guard roles={['super_admin']}><AdminsPage /></Guard>} />
         <Route path="audit" element={<Guard roles={['super_admin']}><AuditPage /></Guard>} />
       </Route>

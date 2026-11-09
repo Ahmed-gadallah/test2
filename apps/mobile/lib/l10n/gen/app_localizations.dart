@@ -1081,6 +1081,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Clear search'**
   String get clearSearch;
+
+  /// No description provided for @branchLocation.
+  ///
+  /// In en, this message translates to:
+  /// **'Location'**
+  String get branchLocation;
 }
 
 class _AppLocalizationsDelegate

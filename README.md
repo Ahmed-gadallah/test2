@@ -10,7 +10,7 @@ Monorepo for the Zaad Pharmacies customer app (Android / iOS), its backend API a
 |---|---|---|
 | `apps/mobile` | Customer app (Arabic default + English, RTL/LTR) | Flutter 3.47, Riverpod, go_router, dio |
 | `apps/backend` | REST API, auth, ERP adapter, redemption workflow, offers, admin RBAC | NestJS 11, Drizzle ORM, PostgreSQL 16 |
-| `apps/admin` | Admin dashboard (Arabic default + English): offers, campaigns, customers, redemptions, admins, audit log | React 19, Vite, TanStack Query |
+| `apps/admin` | Admin dashboard (Arabic default + English): offers, campaigns, customers, redemptions, branches, admins, audit log | React 19, Vite, TanStack Query |
 | `docs/` | ERP assessment, integration mapping, architecture | — |
 
 ## Quick start (local)
@@ -48,9 +48,33 @@ cp .env.example .env        # PowerShell: Copy-Item .env.example .env
 npm run dev
 ```
 
-Roles (enforced by the backend, mirrored in the UI): **super admin** (everything), **marketing admin** (offers, campaigns),
+Roles (enforced by the backend, mirrored in the UI): **super admin** (everything), **marketing admin** (offers, campaigns, branches),
 **customer support** (customers, points, invoices, redemptions — read only). Demo build without a backend:
 `VITE_DATA_SOURCE=demo npm run build` (demo accounts: `super@zaad.demo`, `marketing@zaad.demo`, `support@zaad.demo`, password `Demo12345678`).
+
+### Branch Locator (فروع زاد)
+
+The branches Excel sheet (`Zaad_Branches_Template`) is the source of truth. Import it once, and again whenever it changes:
+
+```bash
+cd apps/backend
+npm run build
+npm run import:branches -- path/to/Zaad_Branches.xlsx           # dry run: lists what would be created/updated + warnings
+npm run import:branches -- path/to/Zaad_Branches.xlsx --apply   # writes it
+```
+
+Or from the dashboard: **Branches → Import from Excel → Check file → Apply import** (super/marketing admins).
+
+- Matched by **Branch ID** (= ERP `branch_0.id`): re-importing the same file creates no duplicates; branches missing from the
+  file are reported, never deleted. Any row error (duplicate ID, missing name/city/address, bad active value, unreadable phone)
+  aborts the whole import.
+- **One phone per branch** (calls and delivery). Excel drops the leading 0 from numbers typed as numbers; the import restores it
+  (`541418264` → `+966541418264`). A missing phone is allowed: the app hides *Call* and says the number is not available.
+- **Location links** must be https Google Maps links and are stored exactly as supplied. The app opens that link; it never resolves
+  coordinates or substitutes another location. A missing or invalid link is imported empty (warning) and *View location* is hidden.
+- `GET /api/v1/branches` is public and returns **active branches only**. Inactive branches never reach the app.
+- Demo builds read `apps/mobile/assets/demo/branches.json` / `apps/admin/src/api/demo-branches.json`, generated from the sheet
+  with `npm run export:branches-demo -- <file.xlsx>` (same parser). Real (`DATA_SOURCE=api`) builds never read them.
 
 ### Demo accounts (mock ERP / demo mode)
 | Mobile | Behaviour |
@@ -69,8 +93,8 @@ Simulate the cashier starting a redemption: in the app → Profile → *Demo too
 ## Tests
 
 ```bash
-cd apps/backend && npm test        # 69 tests: auth, loyalty, redemption, invoices, offers, admin RBAC (needs Postgres)
-cd apps/mobile  && flutter test    # unit + widget tests (formatting, deep links, RTL, demo flows)
+cd apps/backend && npm test        # 81 tests: auth, loyalty, redemption, invoices, offers, admin RBAC, branch import/locator (needs Postgres)
+cd apps/mobile  && flutter test    # unit + widget tests (formatting, deep links, RTL, demo flows, branch search/call/maps)
 ```
 
 ## Security
