@@ -1,7 +1,9 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/clipboard/copy_text.dart';
 import '../../core/theme.dart';
 import '../../data/models.dart';
 import '../../state/providers.dart';
@@ -169,8 +171,8 @@ class BranchCard extends StatelessWidget {
               ),
               if (tel != null) ...[
                 const SizedBox(width: 10),
-                ExternalLink(
-                  uri: tel,
+                PhoneAction(
+                  b,
                   builder: (open) => IconButton.filledTonal(
                     key: Key('call-${b.id}'),
                     tooltip: t.callBranch,
@@ -279,8 +281,8 @@ class _BranchDetail extends StatelessWidget {
               children: [
                 if (tel != null)
                   Expanded(
-                    child: ExternalLink(
-                      uri: tel,
+                    child: PhoneAction(
+                      b,
                       builder: (open) => FilledButton.icon(key: const Key('call-branch'), onPressed: open, icon: const Icon(Icons.call_rounded), label: Text(t.callBranch)),
                     ),
                   ),
@@ -309,8 +311,8 @@ class _BranchDetail extends StatelessWidget {
             if (hasDistinctDistrict) InfoRow(icon: Icons.map_outlined, title: t.branchDistrict, subtitle: b.district),
             tel == null
                 ? InfoRow(icon: Icons.phone_disabled_outlined, title: t.branchPhone, subtitle: t.phoneUnavailable)
-                : ExternalLink(
-                    uri: tel,
+                : PhoneAction(
+                    b,
                     builder: (open) => InfoRow(
                       icon: Icons.phone_outlined,
                       title: t.branchPhone,
@@ -318,7 +320,7 @@ class _BranchDetail extends StatelessWidget {
                       value: context.fmt.mobile(b.phone!),
                       ltrValue: true,
                       onTap: open,
-                      trailing: const SizedBox.shrink(),
+                      trailing: CopyNumberButton(b.phone!),
                     ),
                   ),
             if (maps == null) InfoRow(icon: Icons.location_off_outlined, title: t.branchLocation, subtitle: t.locationUnavailable),
@@ -328,4 +330,84 @@ class _BranchDetail extends StatelessWidget {
       ],
     );
   }
+}
+
+/// "Call branch". In the app: opens the phone's dialer with the number filled in (tel:, never auto-calls).
+/// In a browser, tel: is unreliable — mobile browsers block it from embedded pages such as the shared
+/// demo link — so the web build opens a sheet with the number, a Copy button and a call attempt.
+class PhoneAction extends StatelessWidget {
+  /// Overridable in tests; true for web builds.
+  static bool useCallSheet = kIsWeb;
+  final Branch b;
+  final Widget Function(VoidCallback? open) builder;
+  const PhoneAction(this.b, {super.key, required this.builder});
+  @override
+  Widget build(BuildContext context) {
+    final tel = b.telUri;
+    if (tel == null) return builder(null);
+    if (!useCallSheet) return ExternalLink(uri: tel, builder: builder);
+    return builder(() => showCallSheet(context, b));
+  }
+}
+
+Future<void> showCallSheet(BuildContext context, Branch b) {
+  final t = context.t;
+  final number = context.fmt.mobile(b.phone!);
+  return showModalBottomSheet<void>(
+    context: context,
+    showDragHandle: true,
+    builder: (sheet) => SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(ZaadSpace.page, 0, ZaadSpace.page, ZaadSpace.lg),
+        child: Column(
+          key: const Key('call-sheet'),
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(b.name(context.ar), textAlign: TextAlign.center, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16)),
+            const SizedBox(height: 8),
+            SelectableText(number, textAlign: TextAlign.center, textDirection: TextDirection.ltr,
+                style: const TextStyle(fontSize: 28, fontWeight: FontWeight.w700, color: ZaadColors.primary, letterSpacing: 1)),
+            const SizedBox(height: 4),
+            Text(t.callFromBrowserNote, textAlign: TextAlign.center, style: const TextStyle(color: ZaadColors.textMuted, fontSize: 13)),
+            const SizedBox(height: ZaadSpace.lg),
+            FilledButton.icon(
+              key: const Key('copy-number'),
+              onPressed: () => _copy(sheet, b.phone!, closeSheet: true),
+              icon: const Icon(Icons.copy_rounded),
+              label: Text(t.copyNumber),
+            ),
+            const SizedBox(height: 10),
+            ExternalLink(
+              uri: b.telUri!,
+              builder: (open) => OutlinedButton.icon(onPressed: open, icon: const Icon(Icons.call_rounded), label: Text(t.callBranch)),
+            ),
+          ],
+        ),
+      ),
+    ),
+  );
+}
+
+/// Copies the number as the dialer expects it (05XXXXXXXX for Saudi numbers).
+Future<void> _copy(BuildContext context, String phone, {bool closeSheet = false}) async {
+  final t = context.t;
+  final messenger = ScaffoldMessenger.of(context);
+  final local = phone.startsWith('+966') ? '0${phone.substring(4)}' : phone;
+  final ok = await copyText(local);
+  if (ok && closeSheet && context.mounted) Navigator.of(context).pop();
+  messenger.showSnackBar(SnackBar(content: Text(ok ? t.numberCopied : t.copyFailed)));
+}
+
+class CopyNumberButton extends StatelessWidget {
+  final String phone;
+  const CopyNumberButton(this.phone, {super.key});
+  @override
+  Widget build(BuildContext context) => IconButton(
+        key: const Key('copy-phone'),
+        tooltip: context.t.copyNumber,
+        visualDensity: VisualDensity.compact,
+        onPressed: () => _copy(context, phone),
+        icon: const Icon(Icons.copy_rounded, size: 20, color: ZaadColors.textMuted),
+      );
 }

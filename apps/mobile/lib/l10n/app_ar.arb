@@ -173,5 +173,9 @@
   "locationUnavailable": "الموقع غير متوفر",
   "clearSearch": "مسح البحث",
   "branchLocation": "الموقع",
-  "navBranches": "الفروع"
+  "navBranches": "الفروع",
+  "copyNumber": "نسخ الرقم",
+  "numberCopied": "تم نسخ الرقم",
+  "copyFailed": "تعذّر النسخ — اضغط مطولًا على الرقم لتحديده ونسخه",
+  "callFromBrowserNote": "الاتصال المباشر قد لا يعمل من المتصفح. انسخ الرقم واتصل به من تطبيق الهاتف."
 }

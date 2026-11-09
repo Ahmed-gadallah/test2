@@ -186,5 +186,9 @@
   "locationUnavailable": "Location not available",
   "clearSearch": "Clear search",
   "branchLocation": "Location",
-  "navBranches": "Branches"
+  "navBranches": "Branches",
+  "copyNumber": "Copy number",
+  "numberCopied": "Number copied",
+  "copyFailed": "Couldn't copy — long-press the number to select and copy it",
+  "callFromBrowserNote": "Calling directly may not work from a browser. Copy the number and call it from your phone app."
 }

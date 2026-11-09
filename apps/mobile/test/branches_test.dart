@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -143,6 +144,41 @@ void main() {
     expect(find.byKey(const Key('call-branch')), findsNothing);
     expect(find.byKey(const Key('get-directions')), findsOneWidget);
     expect(linkUris(tester).map((u) => u.toString()), ['https://maps.app.goo.gl/BB8rfs9zdyUzd7a38']);
+  });
+
+  testWidgets('copy button copies the number in local format and confirms', (tester) async {
+    String? copied;
+    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(SystemChannels.platform, (call) async {
+      if (call.method == 'Clipboard.setData') copied = (call.arguments as Map)['text'] as String;
+      return null;
+    });
+    addTearDown(() => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(SystemChannels.platform, null));
+    await pump(tester, initial: '/branches/6');
+    await tester.tap(find.byKey(const Key('copy-phone')));
+    await tester.pumpAndSettle();
+    expect(copied, '0541329804');
+    expect(find.text('تم نسخ الرقم'), findsOneWidget);
+  });
+
+  testWidgets('web build: Call opens a sheet with the number, Copy and a call attempt (browsers block tel: in embedded pages)', (tester) async {
+    PhoneAction.useCallSheet = true;
+    addTearDown(() => PhoneAction.useCallSheet = false);
+    String? copied;
+    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(SystemChannels.platform, (call) async {
+      if (call.method == 'Clipboard.setData') copied = (call.arguments as Map)['text'] as String;
+      return null;
+    });
+    addTearDown(() => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(SystemChannels.platform, null));
+    await pump(tester, initial: '/branches/6');
+    await tester.tap(find.byKey(const Key('call-branch')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('call-sheet')), findsOneWidget);
+    expect(find.text('054 132 9804'), findsWidgets);
+    await tester.tap(find.byKey(const Key('copy-number')));
+    await tester.pumpAndSettle();
+    expect(copied, '0541329804');
+    expect(find.byKey(const Key('call-sheet')), findsNothing);
+    expect(find.text('تم نسخ الرقم'), findsOneWidget);
   });
 
   testWidgets('unknown or inactive branch id → not found (the API never returns inactive branches)', (tester) async {

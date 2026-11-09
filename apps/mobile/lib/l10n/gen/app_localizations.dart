@@ -1093,6 +1093,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Branches'**
   String get navBranches;
+
+  /// No description provided for @copyNumber.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy number'**
+  String get copyNumber;
+
+  /// No description provided for @numberCopied.
+  ///
+  /// In en, this message translates to:
+  /// **'Number copied'**
+  String get numberCopied;
+
+  /// No description provided for @copyFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t copy — long-press the number to select and copy it'**
+  String get copyFailed;
+
+  /// No description provided for @callFromBrowserNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Calling directly may not work from a browser. Copy the number and call it from your phone app.'**
+  String get callFromBrowserNote;
 }
 
 class _AppLocalizationsDelegate

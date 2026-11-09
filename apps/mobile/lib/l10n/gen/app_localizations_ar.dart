@@ -552,4 +552,17 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get navBranches => 'الفروع';
+
+  @override
+  String get copyNumber => 'نسخ الرقم';
+
+  @override
+  String get numberCopied => 'تم نسخ الرقم';
+
+  @override
+  String get copyFailed => 'تعذّر النسخ — اضغط مطولًا على الرقم لتحديده ونسخه';
+
+  @override
+  String get callFromBrowserNote =>
+      'الاتصال المباشر قد لا يعمل من المتصفح. انسخ الرقم واتصل به من تطبيق الهاتف.';
 }

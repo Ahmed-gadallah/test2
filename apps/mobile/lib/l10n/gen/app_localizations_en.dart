@@ -556,4 +556,18 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get navBranches => 'Branches';
+
+  @override
+  String get copyNumber => 'Copy number';
+
+  @override
+  String get numberCopied => 'Number copied';
+
+  @override
+  String get copyFailed =>
+      'Couldn\'t copy — long-press the number to select and copy it';
+
+  @override
+  String get callFromBrowserNote =>
+      'Calling directly may not work from a browser. Copy the number and call it from your phone app.';
 }
