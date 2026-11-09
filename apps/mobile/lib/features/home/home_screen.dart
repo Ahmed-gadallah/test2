@@ -48,7 +48,7 @@ class HomeScreen extends ConsumerWidget {
                   padding: const EdgeInsetsDirectional.fromSTEB(20, 8, 8, 24),
                   child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                     Row(children: [
-                      const BrandMark(color: Colors.white, size: 18),
+                      const BrandMark(size: 40),
                       const Spacer(),
                       NotificationBell(onTap: () => context.push('/notifications')),
                       IconButton(onPressed: () => context.go('/profile'), icon: const Icon(Icons.settings_outlined, color: Colors.white), tooltip: t.settings),

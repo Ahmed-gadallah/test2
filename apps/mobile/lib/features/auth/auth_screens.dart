@@ -28,7 +28,7 @@ class _AuthScaffold extends StatelessWidget {
   const _AuthScaffold({required this.title, this.subtitle, required this.children});
   @override
   Widget build(BuildContext context) => Scaffold(
-        appBar: AppBar(title: const BrandMark(size: 17)),
+        appBar: AppBar(title: const BrandMark(size: 36)),
         body: Column(children: [
           const DemoBanner(),
           Expanded(
@@ -121,7 +121,7 @@ class WelcomeScreen extends ConsumerWidget {
                       ),
                     ),
                     const Spacer(),
-                    const BrandMark(color: Colors.white, size: 30),
+                    const Align(alignment: AlignmentDirectional.centerStart, child: BrandMark(size: 104)),
                     const SizedBox(height: 20),
                     Text(t.welcomeTitle, style: const TextStyle(color: Colors.white, fontSize: 26, fontWeight: FontWeight.w700, height: 1.4)),
                     const SizedBox(height: 12),
@@ -437,7 +437,7 @@ class _UnlockState extends ConsumerState<UnlockScreen> {
             child: Padding(
               padding: const EdgeInsets.all(32),
               child: Column(mainAxisSize: MainAxisSize.min, children: [
-                const BrandMark(size: 26),
+                const BrandMark(size: 96),
                 const SizedBox(height: 32),
                 const Icon(Icons.fingerprint_rounded, size: 72, color: ZaadColors.primary),
                 const SizedBox(height: 24),

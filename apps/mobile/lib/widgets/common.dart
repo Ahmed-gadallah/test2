@@ -14,15 +14,18 @@ extension Ctx on BuildContext {
   bool get ar => Localizations.localeOf(this).languageCode == 'ar';
 }
 
-/// Brand mark placeholder. The official Zaad logo asset must replace this
-/// (spec §4.1: do not invent or redesign the logo). Text only, no artwork.
+/// Official Zaad logo (assets/brand/zaad_logo.png, supplied by Zaad). Used as-is, never redrawn.
 class BrandMark extends StatelessWidget {
-  final Color color;
   final double size;
-  const BrandMark({super.key, this.color = ZaadColors.primary, this.size = 20});
+  const BrandMark({super.key, this.size = 40});
   @override
-  Widget build(BuildContext context) =>
-      Text(context.t.appName, style: TextStyle(color: color, fontSize: size, fontWeight: FontWeight.w700, letterSpacing: context.ar ? 0 : -0.2));
+  Widget build(BuildContext context) => Image.asset(
+        'assets/brand/zaad_logo.png',
+        width: size,
+        height: size,
+        filterQuality: FilterQuality.medium,
+        semanticLabel: context.t.appName,
+      );
 }
 
 class DemoBanner extends StatelessWidget {
