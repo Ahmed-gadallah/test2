@@ -5,6 +5,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:zaad/app.dart';
+import 'package:zaad/core/config.dart';
+import 'package:zaad/data/demo_api.dart';
 import 'package:zaad/state/providers.dart';
 
 void main() {
@@ -42,9 +44,16 @@ void main() {
     tester.view.devicePixelRatio = 3;
     addTearDown(tester.view.reset);
     final prefs = await SharedPreferences.getInstance();
-    await tester.pumpWidget(ProviderScope(overrides: [prefsProvider.overrideWithValue(prefs)], child: const ZaadApp()));
+    // Builds now default to the real API; these flows run on the in-app demo data source.
+    await tester.pumpWidget(ProviderScope(overrides: [prefsProvider.overrideWithValue(prefs), apiProvider.overrideWithValue(DemoZaadApi())], child: const ZaadApp()));
     await tester.pumpAndSettle();
   }
+
+  test('safe defaults: a build without flags uses the real API and hides demo tools', () {
+    expect(AppConfig.isDemo, isFalse);
+    expect(AppConfig.demoTools, isFalse);
+    expect(AppConfig.configError, isNull); // tests are not release mode
+  });
 
   testWidgets('starts on the welcome screen in Arabic, right-to-left', (tester) async {
     await boot(tester);
@@ -56,6 +65,8 @@ void main() {
     await boot(tester);
     await tester.tap(find.text('تسجيل الدخول'));
     await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField).at(0), '0500000001');
+    await tester.enterText(find.byType(TextField).at(1), 'zaad1234');
     await tester.tap(find.widgetWithText(FilledButton, 'تسجيل الدخول'));
     await tester.pump(const Duration(seconds: 1));
     await tester.pump(const Duration(seconds: 1));

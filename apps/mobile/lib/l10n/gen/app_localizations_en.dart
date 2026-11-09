@@ -473,6 +473,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get errRateLimited => 'Too many requests. Please wait and try again.';
 
   @override
+  String get errAccountLocked =>
+      'Too many failed attempts. Try again in a few minutes, or reset your password.';
+
+  @override
   String get errInvalidCredentials => 'Incorrect mobile number or password.';
 
   @override

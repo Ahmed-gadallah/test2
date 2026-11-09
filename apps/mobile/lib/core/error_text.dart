@@ -19,6 +19,7 @@ String errorText(AppLocalizations t, Object error) {
     'OTP_TOO_MANY_ATTEMPTS' => t.errOtpTooMany,
     'RATE_LIMITED' || 'OTP_COOLDOWN' => t.errRateLimited,
     'INVALID_CREDENTIALS' => t.errInvalidCredentials,
+    'ACCOUNT_LOCKED' => t.errAccountLocked,
     'FORBIDDEN' => t.errPermission,
     'NOT_FOUND' => t.errNotFound,
     'REDEMPTION_EXPIRED' => t.redemptionExpired,

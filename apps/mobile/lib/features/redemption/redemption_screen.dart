@@ -40,16 +40,23 @@ class _RedemptionState extends ConsumerState<RedemptionScreen> {
     super.dispose();
   }
 
-  /// Optional extra confirmation with device biometrics (spec §10.3) on mobile.
+  /// Extra confirmation with the device lock (biometric or passcode) before approving (spec §10.3).
+  /// Only "this device has no lock at all" falls back to in-app approval; every other failure
+  /// (cancel, lockout, timeout, error) means NOT approved.
   Future<bool> _confirmWithDevice() async {
     if (kIsWeb) return true;
     final reason = context.t.confirmRedemptionReason;
+    final la = LocalAuthentication();
     try {
-      final la = LocalAuthentication();
       if (!await la.isDeviceSupported()) return true;
       return await la.authenticate(localizedReason: reason);
+    } on LocalAuthException catch (e) {
+      return switch (e.code) {
+        LocalAuthExceptionCode.noCredentialsSet || LocalAuthExceptionCode.noBiometricHardware => true,
+        _ => false,
+      };
     } catch (_) {
-      return true; // no biometric hardware → in-app approval is the agreed baseline
+      return false;
     }
   }
 

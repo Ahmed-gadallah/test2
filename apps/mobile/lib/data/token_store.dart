@@ -13,7 +13,11 @@ class TokenStore {
   static const _refresh = 'zaad.refresh';
   static const _device = 'zaad.device';
   static const _mobile = 'zaad.mobile';
-  final FlutterSecureStorage _s = const FlutterSecureStorage();
+  // iOS: Keychain item readable only while unlocked and never migrated to another device via backup.
+  // Android: values encrypted with a key held in Android Keystore (library default); app backups are disabled in the manifest.
+  final FlutterSecureStorage _s = const FlutterSecureStorage(
+    iOptions: IOSOptions(accessibility: KeychainAccessibility.unlocked_this_device),
+  );
   String? _accessCache;
 
   String get platform => kIsWeb

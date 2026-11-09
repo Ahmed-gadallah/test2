@@ -944,6 +944,12 @@ abstract class AppLocalizations {
   /// **'Too many requests. Please wait and try again.'**
   String get errRateLimited;
 
+  /// No description provided for @errAccountLocked.
+  ///
+  /// In en, this message translates to:
+  /// **'Too many failed attempts. Try again in a few minutes, or reset your password.'**
+  String get errAccountLocked;
+
   /// No description provided for @errInvalidCredentials.
   ///
   /// In en, this message translates to:

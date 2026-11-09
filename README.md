@@ -49,9 +49,15 @@ Simulate the cashier starting a redemption: in the app → Profile → *Demo too
 ## Tests
 
 ```bash
-cd apps/backend && npm test        # 56 tests: auth, loyalty, redemption, invoices, offers, admin RBAC (needs Postgres)
+cd apps/backend && npm test        # 66 tests: auth, loyalty, redemption, invoices, offers, admin RBAC (needs Postgres)
 cd apps/mobile  && flutter test    # unit + widget tests (formatting, deep links, RTL, demo flows)
 ```
+
+## Security
+- Mobile release builds: see [`docs/mobile-release.md`](docs/mobile-release.md) (signing, obfuscation, what the app protects, open items).
+- Backend production refuses to start with: mock ERP, console OTP/push, fixed OTP, placeholder or reused secrets,
+  wildcard CORS, or a non-HTTPS ERP URL. Set `TRUST_PROXY_HOPS` to the real number of proxies in front of the API.
+- The API serves plain HTTP and must sit behind a TLS-terminating proxy/load balancer (HSTS header is already sent).
 
 ## Non-negotiable rules (from the spec)
 - The ERP is the only source of truth for customers, invoices and **all** points arithmetic. The backend never stores balances and never deducts/adjusts points.

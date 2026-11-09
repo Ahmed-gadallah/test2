@@ -465,6 +465,10 @@ class AppLocalizationsAr extends AppLocalizations {
   String get errRateLimited => 'طلبات كثيرة. يرجى الانتظار ثم المحاولة.';
 
   @override
+  String get errAccountLocked =>
+      'محاولات خاطئة كثيرة. حاول بعد دقائق أو أعد تعيين كلمة المرور.';
+
+  @override
   String get errInvalidCredentials => 'رقم الجوال أو كلمة المرور غير صحيحة.';
 
   @override
