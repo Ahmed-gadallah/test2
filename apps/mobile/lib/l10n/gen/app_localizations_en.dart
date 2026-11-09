@@ -17,11 +17,11 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get welcomeTitle =>
-      'Your Zaad points, invoices and offers in one place';
+      'Your points, invoices and offers.. all in one place!';
 
   @override
   String get welcomeSubtitle =>
-      'For Zaad Pharmacies customers registered at our branches';
+      'Everything you need as a Zaad Pharmacies customer, in one app.';
 
   @override
   String get createAccount => 'Create account';

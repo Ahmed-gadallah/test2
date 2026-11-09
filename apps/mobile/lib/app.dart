@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'core/theme.dart';
 import 'data/models.dart';
 import 'features/auth/auth_screens.dart';
+import 'features/auth/welcome_screen.dart';
 import 'features/home/home_screen.dart';
 import 'features/invoices/invoice_screens.dart';
 import 'features/notifications/notifications_screen.dart';

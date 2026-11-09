@@ -10,6 +10,11 @@ class ZaadColors {
   static const primaryDark = Color(0xFF1719A3); // gradient shade
   static const primaryDeep = Color(0xFF10128A); // deepest gradient stop
   static const primarySoft = Color(0xFFE9EAFE);
+  // Welcome/onboarding palette (Zaad brief): deep #1517A8, bright #3038F5, light #E9ECFF, on-blue text #D9DCFF.
+  static const welcomeDeep = Color(0xFF1517A8);
+  static const welcomeBright = Color(0xFF3038F5);
+  static const welcomeLight = Color(0xFFE9ECFF);
+  static const onBlueMuted = Color(0xFFD9DCFF);
   static const background = Color(0xFFF5F6FC);
   static const surface = Colors.white;
   static const text = Color(0xFF191B32);

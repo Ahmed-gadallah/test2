@@ -93,62 +93,6 @@ Widget _mobileField(BuildContext context, TextEditingController c, {bool autofoc
       decoration: InputDecoration(labelText: context.t.mobileNumber, hintText: context.t.mobileHint, prefixIcon: const Icon(Icons.phone_iphone_rounded)),
     );
 
-// ── Welcome ────────────────────────────────────────────────────────────────
-class WelcomeScreen extends ConsumerWidget {
-  const WelcomeScreen({super.key});
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final t = context.t;
-    final lang = ref.watch(localeProvider).languageCode;
-    return Scaffold(
-      backgroundColor: ZaadColors.primary,
-      body: Column(children: [
-        const DemoBanner(),
-        Expanded(
-          child: SafeArea(
-            top: false,
-            child: Center(
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 460),
-                child: Padding(
-                  padding: const EdgeInsets.all(24),
-                  child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-                    Align(
-                      alignment: AlignmentDirectional.centerEnd,
-                      child: TextButton(
-                        onPressed: () => ref.read(localeProvider.notifier).set(lang == 'ar' ? 'en' : 'ar'),
-                        child: Text(lang == 'ar' ? 'English' : 'العربية', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
-                      ),
-                    ),
-                    const Spacer(),
-                    const Align(alignment: AlignmentDirectional.centerStart, child: BrandMark(size: 104)),
-                    const SizedBox(height: 20),
-                    Text(t.welcomeTitle, style: const TextStyle(color: Colors.white, fontSize: 26, fontWeight: FontWeight.w700, height: 1.4)),
-                    const SizedBox(height: 12),
-                    Text(t.welcomeSubtitle, style: TextStyle(color: Colors.white.withValues(alpha: 0.85), fontSize: 15, height: 1.5)),
-                    const Spacer(flex: 2),
-                    FilledButton(
-                      style: FilledButton.styleFrom(backgroundColor: Colors.white, foregroundColor: ZaadColors.primary),
-                      onPressed: () => context.push('/register'),
-                      child: Text(t.createAccount),
-                    ),
-                    const SizedBox(height: 12),
-                    OutlinedButton(
-                      style: OutlinedButton.styleFrom(foregroundColor: Colors.white, side: const BorderSide(color: Colors.white54)),
-                      onPressed: () => context.push('/login'),
-                      child: Text(t.login),
-                    ),
-                  ]),
-                ),
-              ),
-            ),
-          ),
-        ),
-      ]),
-    );
-  }
-}
-
 // ── Register: mobile + consent ─────────────────────────────────────────────
 class RegisterMobileScreen extends ConsumerStatefulWidget {
   final String purpose;

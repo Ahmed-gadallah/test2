@@ -16,10 +16,11 @@ class AppLocalizationsAr extends AppLocalizations {
   String get demoBanner => 'وضع العرض — بيانات تجريبية غير مرتبطة بنظام ERP';
 
   @override
-  String get welcomeTitle => 'نقاطك وفواتيرك وعروض زاد في مكان واحد';
+  String get welcomeTitle => 'نقاطك وفواتيرك وعروضك.. كلها في مكان واحد!';
 
   @override
-  String get welcomeSubtitle => 'لعملاء صيدليات زاد المسجّلين في الفروع';
+  String get welcomeSubtitle =>
+      'كل اللي تحتاجه كعميل لصيدليات زاد، في تطبيق واحد.';
 
   @override
   String get createAccount => 'إنشاء حساب';

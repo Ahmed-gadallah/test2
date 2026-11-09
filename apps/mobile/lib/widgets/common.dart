@@ -30,19 +30,27 @@ class BrandMark extends StatelessWidget {
 
 class DemoBanner extends StatelessWidget {
   const DemoBanner({super.key});
+
+  /// Single source of truth for showing demo indicators (unchanged: demo builds only).
+  static bool get visible => AppConfig.isDemo;
+
   @override
   Widget build(BuildContext context) {
-    if (!AppConfig.isDemo) return const SizedBox.shrink();
-    return Material(
-      color: ZaadColors.warningSoft,
-      child: SafeArea(
-        bottom: false,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-          child: Row(children: [
-            const Icon(Icons.science_outlined, size: 16, color: ZaadColors.warning),
-            const SizedBox(width: 8),
-            Expanded(child: Text(context.t.demoBanner, style: const TextStyle(fontSize: 12, color: ZaadColors.warning, fontWeight: FontWeight.w500))),
+    if (!visible) return const SizedBox.shrink();
+    return SafeArea(
+      bottom: false,
+      child: Center(
+        child: Container(
+          margin: const EdgeInsets.symmetric(horizontal: 22),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 5),
+          decoration: const BoxDecoration(color: ZaadColors.warningSoft, borderRadius: BorderRadius.vertical(bottom: Radius.circular(14))),
+          child: Row(mainAxisSize: MainAxisSize.min, children: [
+            const Icon(Icons.science_outlined, size: 14, color: ZaadColors.warning),
+            const SizedBox(width: 6),
+            Flexible(
+              child: Text(context.t.demoBanner,
+                  maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 11.5, color: ZaadColors.warning, fontWeight: FontWeight.w600)),
+            ),
           ]),
         ),
       ),

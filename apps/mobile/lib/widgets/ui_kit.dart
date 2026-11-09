@@ -3,12 +3,24 @@ import 'package:flutter/material.dart';
 import '../core/theme.dart';
 
 /// Shrinks slightly while pressed — the app's single tap-feedback behaviour.
+///
+/// The scale listens to raw pointer events (Listener), so it never competes with the
+/// InkWell for the tap. [decoration] (fill, gradient, border, shadow) is painted outside
+/// the clipped ink layer, so shadows are never cut into a rectangle.
 class Pressable extends StatefulWidget {
   final Widget child;
   final VoidCallback? onTap;
   final BorderRadius borderRadius;
+  final Decoration? decoration;
   final String? semanticLabel;
-  const Pressable({super.key, required this.child, this.onTap, this.borderRadius = const BorderRadius.all(Radius.circular(ZaadSpace.radius)), this.semanticLabel});
+  const Pressable({
+    super.key,
+    required this.child,
+    this.onTap,
+    this.borderRadius = const BorderRadius.all(Radius.circular(ZaadSpace.radius)),
+    this.decoration,
+    this.semanticLabel,
+  });
   @override
   State<Pressable> createState() => _PressableState();
 }
@@ -16,26 +28,32 @@ class Pressable extends StatefulWidget {
 class _PressableState extends State<Pressable> {
   bool _down = false;
   void _set(bool v) {
-    if (_down != v) setState(() => _down = v);
+    if (_down != v && mounted) setState(() => _down = v);
   }
 
   @override
   Widget build(BuildContext context) {
     final reduce = MediaQuery.of(context).disableAnimations;
+    final enabled = widget.onTap != null;
     return Semantics(
-      button: widget.onTap != null,
+      button: enabled,
       label: widget.semanticLabel,
-      child: GestureDetector(
-        onTapDown: widget.onTap == null ? null : (_) => _set(true),
-        onTapUp: (_) => _set(false),
-        onTapCancel: () => _set(false),
+      child: Listener(
+        onPointerDown: enabled ? (_) => _set(true) : null,
+        onPointerUp: (_) => _set(false),
+        onPointerCancel: (_) => _set(false),
         child: AnimatedScale(
           scale: _down && !reduce ? 0.97 : 1,
           duration: const Duration(milliseconds: 120),
           curve: Curves.easeOut,
-          child: Material(
-            type: MaterialType.transparency,
-            child: InkWell(onTap: widget.onTap, borderRadius: widget.borderRadius, child: widget.child),
+          child: DecoratedBox(
+            decoration: widget.decoration ?? const BoxDecoration(),
+            child: Material(
+              type: MaterialType.transparency,
+              borderRadius: widget.borderRadius,
+              clipBehavior: Clip.antiAlias,
+              child: InkWell(onTap: widget.onTap, borderRadius: widget.borderRadius, child: widget.child),
+            ),
           ),
         ),
       ),
@@ -53,11 +71,9 @@ class SurfaceCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final r = BorderRadius.circular(radius);
-    final body = Ink(
-      decoration: BoxDecoration(color: ZaadColors.surface, borderRadius: r, border: Border.all(color: ZaadColors.border), boxShadow: ZaadShadows.card),
-      child: Padding(padding: padding, child: child),
-    );
-    return onTap == null ? Material(type: MaterialType.transparency, child: body) : Pressable(onTap: onTap, borderRadius: r, child: body);
+    final deco = BoxDecoration(color: ZaadColors.surface, borderRadius: r, border: Border.all(color: ZaadColors.border), boxShadow: ZaadShadows.card);
+    final body = Padding(padding: padding, child: child);
+    return onTap == null ? DecoratedBox(decoration: deco, child: body) : Pressable(onTap: onTap, borderRadius: r, decoration: deco, child: body);
   }
 }
 

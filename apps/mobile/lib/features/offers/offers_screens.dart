@@ -20,13 +20,24 @@ class OfferImage extends StatelessWidget {
   Widget build(BuildContext context) {
     final fallback = Container(
       height: height,
-      decoration: BoxDecoration(gradient: ZaadGradients.hero, borderRadius: BorderRadius.circular(radius)),
-      child: const Center(child: Icon(Icons.local_offer_rounded, color: Colors.white54, size: 40)),
+      decoration: BoxDecoration(
+        gradient: ZaadGradients.hero,
+        borderRadius: BorderRadius.circular(radius),
+      ),
+      child: const Center(
+        child: Icon(Icons.local_offer_rounded, color: Colors.white54, size: 40),
+      ),
     );
     if (o.imageUrl == null) return fallback;
     return ClipRRect(
       borderRadius: BorderRadius.circular(radius),
-      child: Image.network(o.imageUrl!, height: height, width: double.infinity, fit: BoxFit.cover, errorBuilder: (_, _, _) => fallback),
+      child: Image.network(
+        o.imageUrl!,
+        height: height,
+        width: double.infinity,
+        fit: BoxFit.cover,
+        errorBuilder: (_, _, _) => fallback,
+      ),
     );
   }
 }
@@ -42,50 +53,117 @@ class OfferBanner extends StatelessWidget {
     return Pressable(
       onTap: () => context.push('/offers/${o.id}'),
       borderRadius: BorderRadius.circular(24),
-      child: Ink(
-        decoration: BoxDecoration(gradient: ZaadGradients.hero, borderRadius: BorderRadius.circular(24), boxShadow: ZaadShadows.card),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(24),
-          child: Stack(children: [
+      decoration: BoxDecoration(
+        gradient: ZaadGradients.hero,
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: ZaadShadows.card,
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(24),
+        child: Stack(
+          children: [
             PositionedDirectional(
               end: -40,
               top: -40,
-              child: Container(width: 170, height: 170, decoration: BoxDecoration(shape: BoxShape.circle, color: Colors.white.withValues(alpha: 0.07))),
+              child: Container(
+                width: 170,
+                height: 170,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Colors.white.withValues(alpha: 0.07),
+                ),
+              ),
             ),
             Padding(
               padding: const EdgeInsets.all(18),
-              child: Row(children: [
-                Expanded(
-                  child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisAlignment: MainAxisAlignment.center, children: [
-                    Text(o.title(ar), maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w700, height: 1.35)),
-                    const SizedBox(height: 4),
-                    Text(o.description(ar), maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(color: Color(0xCCFFFFFF), fontSize: 13)),
-                    const SizedBox(height: 12),
-                    Row(children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
-                        decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(30)),
-                        child: Row(mainAxisSize: MainAxisSize.min, children: [
-                          Text(context.t.viewDetails, style: const TextStyle(color: ZaadColors.primary, fontWeight: FontWeight.w700, fontSize: 13)),
-                          const SizedBox(width: 2),
-                          const Icon(Icons.chevron_right_rounded, color: ZaadColors.primary, size: 18),
-                        ]),
-                      ),
-                      const SizedBox(width: 10),
-                      Flexible(
-                        child: Text(context.t.validUntil(context.fmt.date(o.endAt)),
-                            maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(color: Color(0xB3FFFFFF), fontSize: 11)),
-                      ),
-                    ]),
-                  ]),
-                ),
-                if (hasImage) ...[
-                  const SizedBox(width: 12),
-                  SizedBox(width: 104, child: OfferImage(o, height: 104, radius: 18)),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          o.title(ar),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 18,
+                            fontWeight: FontWeight.w700,
+                            height: 1.35,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          o.description(ar),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            color: Color(0xCCFFFFFF),
+                            fontSize: 13,
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 14,
+                                vertical: 7,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(30),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Text(
+                                    context.t.viewDetails,
+                                    style: const TextStyle(
+                                      color: ZaadColors.primary,
+                                      fontWeight: FontWeight.w700,
+                                      fontSize: 13,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 2),
+                                  const Icon(
+                                    Icons.chevron_right_rounded,
+                                    color: ZaadColors.primary,
+                                    size: 18,
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(width: 10),
+                            Flexible(
+                              child: Text(
+                                context.t.validUntil(context.fmt.date(o.endAt)),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                  color: Color(0xB3FFFFFF),
+                                  fontSize: 11,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                  if (hasImage) ...[
+                    const SizedBox(width: 12),
+                    SizedBox(
+                      width: 104,
+                      child: OfferImage(o, height: 104, radius: 18),
+                    ),
+                  ],
                 ],
-              ]),
+              ),
             ),
-          ]),
+          ],
         ),
       ),
     );
@@ -117,32 +195,50 @@ class _OffersCarouselState extends ConsumerState<OffersCarousel> {
       loading: const Skeleton(height: 168, radius: 24),
       builder: (list) {
         if (list.isEmpty) {
-          return SurfaceCard(child: EmptyView(icon: Icons.local_offer_outlined, text: context.t.noOffers));
-        }
-        return Column(children: [
-          SizedBox(
-            height: 168,
-            child: PageView.builder(
-              controller: _page,
-              itemCount: list.length,
-              onPageChanged: (i) => setState(() => _index = i),
-              itemBuilder: (_, i) => Padding(padding: const EdgeInsets.symmetric(horizontal: 2), child: OfferBanner(list[i])),
+          return SurfaceCard(
+            child: EmptyView(
+              icon: Icons.local_offer_outlined,
+              text: context.t.noOffers,
             ),
-          ),
-          if (list.length > 1) ...[
-            const SizedBox(height: 12),
-            Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-              for (var i = 0; i < list.length; i++)
-                AnimatedContainer(
-                  duration: const Duration(milliseconds: 220),
-                  margin: const EdgeInsets.symmetric(horizontal: 3),
-                  width: i == _index ? 20 : 7,
-                  height: 7,
-                  decoration: BoxDecoration(color: i == _index ? ZaadColors.primary : const Color(0xFFD5D7EA), borderRadius: BorderRadius.circular(8)),
+          );
+        }
+        return Column(
+          children: [
+            SizedBox(
+              height: 168,
+              child: PageView.builder(
+                controller: _page,
+                itemCount: list.length,
+                onPageChanged: (i) => setState(() => _index = i),
+                itemBuilder: (_, i) => Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 2),
+                  child: OfferBanner(list[i]),
                 ),
-            ]),
+              ),
+            ),
+            if (list.length > 1) ...[
+              const SizedBox(height: 12),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  for (var i = 0; i < list.length; i++)
+                    AnimatedContainer(
+                      duration: const Duration(milliseconds: 220),
+                      margin: const EdgeInsets.symmetric(horizontal: 3),
+                      width: i == _index ? 20 : 7,
+                      height: 7,
+                      decoration: BoxDecoration(
+                        color: i == _index
+                            ? ZaadColors.primary
+                            : const Color(0xFFD5D7EA),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                ],
+              ),
+            ],
           ],
-        ]);
+        );
       },
     );
   }
@@ -162,15 +258,35 @@ class OffersScreen extends ConsumerWidget {
           onRetry: () => ref.invalidate(offersProvider),
           loading: ListView(
             padding: const EdgeInsets.all(ZaadSpace.page),
-            children: const [Skeleton(height: 168, radius: 24), SizedBox(height: 14), Skeleton(height: 168, radius: 24)],
+            children: const [
+              Skeleton(height: 168, radius: 24),
+              SizedBox(height: 14),
+              Skeleton(height: 168, radius: 24),
+            ],
           ),
           builder: (list) => list.isEmpty
-              ? ListView(children: [const SizedBox(height: 60), EmptyView(icon: Icons.local_offer_outlined, text: t.noOffers)])
+              ? ListView(
+                  children: [
+                    const SizedBox(height: 60),
+                    EmptyView(
+                      icon: Icons.local_offer_outlined,
+                      text: t.noOffers,
+                    ),
+                  ],
+                )
               : ListView.separated(
-                  padding: const EdgeInsets.fromLTRB(ZaadSpace.page, ZaadSpace.sm, ZaadSpace.page, ZaadSpace.xl),
+                  padding: const EdgeInsets.fromLTRB(
+                    ZaadSpace.page,
+                    ZaadSpace.sm,
+                    ZaadSpace.page,
+                    ZaadSpace.xl,
+                  ),
                   itemCount: list.length,
                   separatorBuilder: (_, _) => const SizedBox(height: 14),
-                  itemBuilder: (_, i) => FadeSlideIn(index: i, child: SizedBox(height: 168, child: OfferBanner(list[i]))),
+                  itemBuilder: (_, i) => FadeSlideIn(
+                    index: i,
+                    child: SizedBox(height: 168, child: OfferBanner(list[i])),
+                  ),
                 ),
         ),
       ),
@@ -191,40 +307,94 @@ class OfferDetailScreen extends ConsumerWidget {
       body: AsyncBody(
         value: ref.watch(offerProvider(id)),
         onRetry: () => ref.invalidate(offerProvider(id)),
-        builder: (o) => ListView(padding: const EdgeInsets.fromLTRB(ZaadSpace.page, 0, ZaadSpace.page, ZaadSpace.xl), children: [
-          FadeSlideIn(child: OfferImage(o, height: 200, radius: ZaadSpace.radius)),
-          const SizedBox(height: ZaadSpace.lg),
-          FadeSlideIn(
-            index: 1,
-            child: SurfaceCard(
-              padding: const EdgeInsets.all(20),
-              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                if (o.ended) Padding(padding: const EdgeInsets.only(bottom: 12), child: StatusChip(t.offerEnded, fg: ZaadColors.textMuted, bg: ZaadColors.border)),
-                Text(o.title(ar), style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w700, height: 1.4)),
-                const SizedBox(height: 10),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                  decoration: BoxDecoration(color: ZaadColors.primarySoft, borderRadius: BorderRadius.circular(30)),
-                  child: Row(mainAxisSize: MainAxisSize.min, children: [
-                    const Icon(Icons.event_rounded, size: 16, color: ZaadColors.primary),
-                    const SizedBox(width: 6),
-                    Text(t.validFromTo(f.date(o.startAt), f.date(o.endAt)), style: const TextStyle(color: ZaadColors.primary, fontWeight: FontWeight.w600, fontSize: 13)),
-                  ]),
-                ),
-                const SizedBox(height: 16),
-                Text(o.description(ar), style: const TextStyle(fontSize: 15, height: 1.75)),
-              ]),
-            ),
+        builder: (o) => ListView(
+          padding: const EdgeInsets.fromLTRB(
+            ZaadSpace.page,
+            0,
+            ZaadSpace.page,
+            ZaadSpace.xl,
           ),
-          if (o.destinationUrl != null && !o.ended) ...[
-            const SizedBox(height: ZaadSpace.lg),
-            FilledButton.icon(
-              onPressed: () => launchUrl(Uri.parse(o.destinationUrl!), mode: LaunchMode.externalApplication),
-              icon: const Icon(Icons.open_in_new_rounded, size: 20),
-              label: Text(o.ctaLabel(ar) ?? t.viewDetails),
+          children: [
+            FadeSlideIn(
+              child: OfferImage(o, height: 200, radius: ZaadSpace.radius),
             ),
+            const SizedBox(height: ZaadSpace.lg),
+            FadeSlideIn(
+              index: 1,
+              child: SurfaceCard(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (o.ended)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 12),
+                        child: StatusChip(
+                          t.offerEnded,
+                          fg: ZaadColors.textMuted,
+                          bg: ZaadColors.border,
+                        ),
+                      ),
+                    Text(
+                      o.title(ar),
+                      style: const TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.w700,
+                        height: 1.4,
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
+                        color: ZaadColors.primarySoft,
+                        borderRadius: BorderRadius.circular(30),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(
+                            Icons.event_rounded,
+                            size: 16,
+                            color: ZaadColors.primary,
+                          ),
+                          const SizedBox(width: 6),
+                          Text(
+                            t.validFromTo(f.date(o.startAt), f.date(o.endAt)),
+                            style: const TextStyle(
+                              color: ZaadColors.primary,
+                              fontWeight: FontWeight.w600,
+                              fontSize: 13,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      o.description(ar),
+                      style: const TextStyle(fontSize: 15, height: 1.75),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            if (o.destinationUrl != null && !o.ended) ...[
+              const SizedBox(height: ZaadSpace.lg),
+              FilledButton.icon(
+                onPressed: () => launchUrl(
+                  Uri.parse(o.destinationUrl!),
+                  mode: LaunchMode.externalApplication,
+                ),
+                icon: const Icon(Icons.open_in_new_rounded, size: 20),
+                label: Text(o.ctaLabel(ar) ?? t.viewDetails),
+              ),
+            ],
           ],
-        ]),
+        ),
       ),
     );
   }

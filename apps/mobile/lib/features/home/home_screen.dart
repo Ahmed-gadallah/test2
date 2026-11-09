@@ -256,13 +256,13 @@ class PendingRedemptionBanner extends StatelessWidget {
     final f = context.fmt;
     return Pressable(
       onTap: () => context.push('/redemption/${r.id}'),
-      child: Ink(
+      decoration: BoxDecoration(
+        color: ZaadColors.warningSoft,
+        borderRadius: BorderRadius.circular(ZaadSpace.radius),
+        border: Border.all(color: const Color(0xFFF3D9A4)),
+      ),
+      child: Padding(
         padding: const EdgeInsets.all(ZaadSpace.lg),
-        decoration: BoxDecoration(
-          color: ZaadColors.warningSoft,
-          borderRadius: BorderRadius.circular(ZaadSpace.radius),
-          border: Border.all(color: const Color(0xFFF3D9A4)),
-        ),
         child: Row(children: [
           const IconTile(Icons.point_of_sale_rounded, bg: Colors.white, fg: ZaadColors.warning),
           const SizedBox(width: ZaadSpace.md),

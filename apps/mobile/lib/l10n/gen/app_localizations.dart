@@ -113,13 +113,13 @@ abstract class AppLocalizations {
   /// No description provided for @welcomeTitle.
   ///
   /// In en, this message translates to:
-  /// **'Your Zaad points, invoices and offers in one place'**
+  /// **'Your points, invoices and offers.. all in one place!'**
   String get welcomeTitle;
 
   /// No description provided for @welcomeSubtitle.
   ///
   /// In en, this message translates to:
-  /// **'For Zaad Pharmacies customers registered at our branches'**
+  /// **'Everything you need as a Zaad Pharmacies customer, in one app.'**
   String get welcomeSubtitle;
 
   /// No description provided for @createAccount.
