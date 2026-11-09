@@ -10,6 +10,7 @@ Monorepo for the Zaad Pharmacies customer app (Android / iOS), its backend API a
 |---|---|---|
 | `apps/mobile` | Customer app (Arabic default + English, RTL/LTR) | Flutter 3.47, Riverpod, go_router, dio |
 | `apps/backend` | REST API, auth, ERP adapter, redemption workflow, offers, admin RBAC | NestJS 11, Drizzle ORM, PostgreSQL 16 |
+| `apps/admin` | Admin dashboard (Arabic default + English): offers, campaigns, customers, redemptions, admins, audit log | React 19, Vite, TanStack Query |
 | `docs/` | ERP assessment, integration mapping, architecture | — |
 
 ## Quick start (local)
@@ -32,6 +33,25 @@ flutter run --dart-define=DATA_SOURCE=demo
 flutter run --dart-define=DATA_SOURCE=api --dart-define=API_BASE_URL=http://10.0.2.2:3000/api/v1   # Android emulator
 ```
 
+### Admin dashboard
+
+```bash
+# 1. create the first super admin (backend must have run once so the tables exist)
+cd apps/backend
+ADMIN_EMAIL=you@zaad.example ADMIN_NAME="Your Name" ADMIN_PASSWORD=ChangeMe2026x npm run seed:admin
+#    PowerShell: $env:ADMIN_EMAIL="you@zaad.example"; $env:ADMIN_NAME="Your Name"; $env:ADMIN_PASSWORD="ChangeMe2026x"; npm run seed:admin
+
+# 2. run the dashboard → http://localhost:5173
+cd ../admin
+npm ci
+cp .env.example .env        # PowerShell: Copy-Item .env.example .env
+npm run dev
+```
+
+Roles (enforced by the backend, mirrored in the UI): **super admin** (everything), **marketing admin** (offers, campaigns),
+**customer support** (customers, points, invoices, redemptions — read only). Demo build without a backend:
+`VITE_DATA_SOURCE=demo npm run build` (demo accounts: `super@zaad.demo`, `marketing@zaad.demo`, `support@zaad.demo`, password `Demo12345678`).
+
 ### Demo accounts (mock ERP / demo mode)
 | Mobile | Behaviour |
 |---|---|
@@ -49,7 +69,7 @@ Simulate the cashier starting a redemption: in the app → Profile → *Demo too
 ## Tests
 
 ```bash
-cd apps/backend && npm test        # 66 tests: auth, loyalty, redemption, invoices, offers, admin RBAC (needs Postgres)
+cd apps/backend && npm test        # 69 tests: auth, loyalty, redemption, invoices, offers, admin RBAC (needs Postgres)
 cd apps/mobile  && flutter test    # unit + widget tests (formatting, deep links, RTL, demo flows)
 ```
 
