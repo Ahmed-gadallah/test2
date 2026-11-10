@@ -26,6 +26,12 @@ class ZaadColors {
   static const dangerSoft = Color(0xFFFCEBE9);
   static const warning = Color(0xFF9A6200);
   static const warningSoft = Color(0xFFFFF4DD);
+  // Accent (reference design): warm gold for coins, chevrons and CTAs on promo banners. Used sparingly.
+  static const gold = Color(0xFFF6B93B);
+  static const goldDeep = Color(0xFFE09A12);
+  static const goldSoft = Color(0xFFFFF1CC);
+  static const electric = Color(0xFF4A5CFF); // secondary blue for highlights in gradients
+  static const navy = Color(0xFF0B0E6B);
 }
 
 /// 4-pt spacing scale.
@@ -64,6 +70,24 @@ class ZaadGradients {
     stops: [0, 0.45, 1],
     begin: AlignmentDirectional.topStart,
     end: AlignmentDirectional.bottomEnd,
+  );
+  /// Active tab / primary chips.
+  static const active = LinearGradient(
+    colors: [ZaadColors.electric, ZaadColors.primary],
+    begin: Alignment.topCenter,
+    end: Alignment.bottomCenter,
+  );
+  /// Deep loyalty card.
+  static const loyalty = LinearGradient(
+    colors: [Color(0xFF3B47F0), ZaadColors.primary, Color(0xFF0E1290)],
+    stops: [0, 0.45, 1],
+    begin: AlignmentDirectional.topEnd,
+    end: AlignmentDirectional.bottomStart,
+  );
+  static const gold = LinearGradient(
+    colors: [Color(0xFFFFD66B), ZaadColors.gold, ZaadColors.goldDeep],
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
   );
   /// Very light blue wash behind light headers (home, auth).
   static const wash = LinearGradient(

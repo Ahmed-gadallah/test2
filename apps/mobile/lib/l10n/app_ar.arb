@@ -180,5 +180,7 @@
   "callFromBrowserNote": "الاتصال المباشر متاح في تطبيق زاد. من المتصفح: انسخ الرقم واتصل به من تطبيق الهاتف.",
   "openInGoogleMaps": "افتح موقع الفرع في خرائط جوجل",
   "noPhoneShort": "لا يوجد رقم",
-  "noLocationShort": "لا يوجد موقع"
+  "noLocationShort": "لا يوجد موقع",
+  "more": "المزيد",
+  "discoverNow": "اكتشف الآن"
 }

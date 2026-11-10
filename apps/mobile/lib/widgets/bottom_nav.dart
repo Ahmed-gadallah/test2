@@ -28,9 +28,10 @@ class ZaadBottomNav extends StatelessWidget {
         margin: const EdgeInsets.fromLTRB(14, 4, 14, 0),
         padding: const EdgeInsets.all(6),
         decoration: BoxDecoration(
-          color: ZaadColors.surface,
-          borderRadius: BorderRadius.circular(28),
-          border: Border.all(color: ZaadColors.border.withValues(alpha: 0.6)),
+          // Frosted white pill.
+          color: Colors.white.withValues(alpha: 0.96),
+          borderRadius: BorderRadius.circular(30),
+          border: Border.all(color: Colors.white),
           boxShadow: ZaadShadows.nav,
         ),
         child: LayoutBuilder(builder: (context, c) {
@@ -47,7 +48,13 @@ class ZaadBottomNav extends StatelessWidget {
               width: w,
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 2),
-                child: DecoratedBox(decoration: BoxDecoration(color: ZaadColors.primarySoft, borderRadius: BorderRadius.circular(22))),
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    gradient: ZaadGradients.active,
+                    borderRadius: BorderRadius.circular(24),
+                    boxShadow: [BoxShadow(color: ZaadColors.primary.withValues(alpha: 0.35), blurRadius: 14, offset: const Offset(0, 6))],
+                  ),
+                ),
               ),
             ),
             Row(children: [
@@ -67,7 +74,7 @@ class _Item extends StatelessWidget {
   const _Item({required this.item, required this.active, required this.onTap});
   @override
   Widget build(BuildContext context) {
-    final color = active ? ZaadColors.primary : ZaadColors.textMuted;
+    final color = active ? Colors.white : ZaadColors.textMuted;
     final reduce = MediaQuery.of(context).disableAnimations;
     return Semantics(
       selected: active,

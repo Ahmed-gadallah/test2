@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:url_launcher/link.dart';
 
+import '../core/open_url/open_stub.dart' if (dart.library.js_interop) '../core/open_url/open_web.dart';
 import '../core/theme.dart';
 
 /// Shrinks slightly while pressed — the app's single tap-feedback behaviour.
@@ -16,6 +17,8 @@ class Pressable extends StatefulWidget {
   final VoidCallback? onTap;
   final BorderRadius borderRadius;
   final Decoration? decoration;
+  /// Optional decoration while pressed (e.g. a deeper shadow: the card "lifts" as it scales).
+  final Decoration? pressedDecoration;
   final String? semanticLabel;
   const Pressable({
     super.key,
@@ -23,6 +26,7 @@ class Pressable extends StatefulWidget {
     this.onTap,
     this.borderRadius = const BorderRadius.all(Radius.circular(ZaadSpace.radius)),
     this.decoration,
+    this.pressedDecoration,
     this.semanticLabel,
   });
   @override
@@ -50,8 +54,10 @@ class _PressableState extends State<Pressable> {
           scale: _down && !reduce ? 0.97 : 1,
           duration: const Duration(milliseconds: 120),
           curve: Curves.easeOut,
-          child: DecoratedBox(
-            decoration: widget.decoration ?? const BoxDecoration(),
+          child: AnimatedContainer(
+            duration: ZaadMotion.fast,
+            curve: Curves.easeOut,
+            decoration: (_down && widget.pressedDecoration != null ? widget.pressedDecoration : widget.decoration) ?? const BoxDecoration(),
             child: Material(
               type: MaterialType.transparency,
               borderRadius: widget.borderRadius,
@@ -102,11 +108,14 @@ class SectionHeader extends StatelessWidget {
   final String title;
   final String? actionLabel;
   final VoidCallback? onAction;
-  const SectionHeader(this.title, {super.key, this.actionLabel, this.onAction});
+  /// Optional small icon before the title (e.g. a gold bolt for quick access).
+  final Widget? leading;
+  const SectionHeader(this.title, {super.key, this.actionLabel, this.onAction, this.leading});
   @override
   Widget build(BuildContext context) => Padding(
         padding: const EdgeInsets.only(top: ZaadSpace.sm, bottom: ZaadSpace.md),
         child: Row(children: [
+          if (leading != null) ...[leading!, const SizedBox(width: 6)],
           Expanded(child: Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: ZaadColors.text))),
           if (actionLabel != null)
             TextButton(
@@ -182,7 +191,9 @@ class ShakeIn extends StatelessWidget {
 class FadeSlideIn extends StatelessWidget {
   final Widget child;
   final int index;
-  const FadeSlideIn({super.key, required this.child, this.index = 0});
+  /// Start offset in px; negative slides down from above (header).
+  final double offset;
+  const FadeSlideIn({super.key, required this.child, this.index = 0, this.offset = 16});
   @override
   Widget build(BuildContext context) {
     if (MediaQuery.of(context).disableAnimations) return child;
@@ -192,7 +203,7 @@ class FadeSlideIn extends StatelessWidget {
       tween: Tween(begin: 0, end: 1),
       duration: ZaadMotion.slow + ZaadMotion.stagger * i,
       curve: ZaadMotion.curve,
-      builder: (_, t, c) => Opacity(opacity: t, child: Transform.translate(offset: Offset(0, (1 - t) * 16), child: c)),
+      builder: (_, t, c) => Opacity(opacity: t, child: Transform.translate(offset: Offset(0, (1 - t) * offset), child: c)),
       child: child,
     );
   }
@@ -325,55 +336,29 @@ class InfoRow extends StatelessWidget {
       );
 }
 
-/// Opens an external website. On phones it launches the system browser; on the web it renders a
-/// real <a target="_blank"> link, which also works inside sandboxed frames that block window.open
-/// (e.g. the shared demo link). Use this for every external URL instead of calling launchUrl.
+/// Opens an external URL (website, Google Maps link, tel:).
 ///
-/// On the web each Link is a real <a> element layered over the app, and it keeps receiving taps even
-/// when a dialog or bottom sheet is drawn above it (a tap on a sheet button could open the map link
-/// underneath). So while any dialog/sheet is open ([linkGuard]), web links render as plain widgets.
+/// Phones (Android/iOS): url_launcher's Link hands the URL to the system (browser, Maps, dialer).
+/// Web: the URL is opened directly from the tap. url_launcher's web Link places an invisible <a>
+/// over the widget, but this Flutter web build positions those elements at the wrong horizontal
+/// offset (about 3× the real x), so taps missed narrow buttons and could hit a neighbouring link
+/// (e.g. "Copy number" opening the map). Opening from the tap avoids that entirely.
 class ExternalLink extends StatelessWidget {
+  /// True on web builds; tests set it to exercise the web path on the VM.
+  static bool useDirectOpen = kIsWeb;
   final Uri uri;
   final Widget Function(VoidCallback? open) builder;
   const ExternalLink({super.key, required this.uri, required this.builder});
   @override
   Widget build(BuildContext context) {
-    Widget link() => Link(
-          uri: uri,
-          target: LinkTarget.blank,
-          builder: (context, follow) => builder(follow == null ? null : () => follow()),
-        );
-    if (!kIsWeb && !LinkGuard.forceWebBehaviour) return link();
-    return ValueListenableBuilder<int>(
-      valueListenable: linkGuard.openPopups,
-      builder: (_, open, _) => open > 0 ? builder(() {}) : link(),
+    if (useDirectOpen) return builder(() => openInNewTab(uri.toString()));
+    return Link(
+      uri: uri,
+      target: LinkTarget.blank,
+      builder: (context, follow) => builder(follow == null ? null : () => follow()),
     );
   }
 }
-
-/// Counts dialogs/bottom sheets on the root navigator (see [ExternalLink]).
-class LinkGuard extends NavigatorObserver {
-  /// Tests run on the VM; this lets them exercise the web behaviour.
-  static bool forceWebBehaviour = false;
-  final openPopups = ValueNotifier<int>(0);
-  void _change(Route<dynamic>? r, int d) {
-    if (r is PopupRoute) openPopups.value = (openPopups.value + d).clamp(0, 1 << 20);
-  }
-
-  @override
-  void didPush(Route<dynamic> route, Route<dynamic>? previousRoute) => _change(route, 1);
-  @override
-  void didPop(Route<dynamic> route, Route<dynamic>? previousRoute) => _change(route, -1);
-  @override
-  void didRemove(Route<dynamic> route, Route<dynamic>? previousRoute) => _change(route, -1);
-  @override
-  void didReplace({Route<dynamic>? newRoute, Route<dynamic>? oldRoute}) {
-    _change(oldRoute, -1);
-    _change(newRoute, 1);
-  }
-}
-
-final linkGuard = LinkGuard();
 
 
 /// Counts up to [value] the first time it appears (from 0), then animates between later values.

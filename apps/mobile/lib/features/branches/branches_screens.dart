@@ -479,7 +479,7 @@ Future<void> showCallSheet(BuildContext context, Branch b) {
   final number = context.fmt.mobile(b.phone!);
   return showModalBottomSheet<void>(
     context: context,
-    useRootNavigator: true, // so [linkGuard] sees it and disables the web links underneath
+    useRootNavigator: true,
     showDragHandle: true,
     builder: (sheet) => SafeArea(
       child: Padding(

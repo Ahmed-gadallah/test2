@@ -1135,6 +1135,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'No location'**
   String get noLocationShort;
+
+  /// No description provided for @more.
+  ///
+  /// In en, this message translates to:
+  /// **'More'**
+  String get more;
+
+  /// No description provided for @discoverNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Discover now'**
+  String get discoverNow;
 }
 
 class _AppLocalizationsDelegate

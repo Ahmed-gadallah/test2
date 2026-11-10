@@ -182,7 +182,15 @@ class NotificationBell extends ConsumerWidget {
       icon: Badge(
         isLabelVisible: unread > 0,
         backgroundColor: const Color(0xFFE5484D),
-        label: Text(unread > 9 ? '9+' : '$unread'),
+        // The count pops in whenever it changes.
+        label: TweenAnimationBuilder<double>(
+          key: ValueKey(unread),
+          tween: Tween(begin: MediaQuery.of(context).disableAnimations ? 1 : 0.4, end: 1),
+          duration: const Duration(milliseconds: 420),
+          curve: Curves.easeOutBack,
+          builder: (_, s, c) => Transform.scale(scale: s, child: c),
+          child: Text(unread > 9 ? '9+' : '$unread'),
+        ),
         child: Icon(Icons.notifications_none_rounded, color: color, size: 26),
       ),
     );

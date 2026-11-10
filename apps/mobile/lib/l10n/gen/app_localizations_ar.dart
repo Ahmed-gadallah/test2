@@ -574,4 +574,10 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get noLocationShort => 'لا يوجد موقع';
+
+  @override
+  String get more => 'المزيد';
+
+  @override
+  String get discoverNow => 'اكتشف الآن';
 }

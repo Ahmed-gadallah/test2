@@ -193,5 +193,7 @@
   "callFromBrowserNote": "Direct calling works in the Zaad app. In a browser, copy the number and call it from your phone app.",
   "openInGoogleMaps": "Open the branch location in Google Maps",
   "noPhoneShort": "No phone",
-  "noLocationShort": "No location"
+  "noLocationShort": "No location",
+  "more": "More",
+  "discoverNow": "Discover now"
 }

@@ -29,7 +29,7 @@ Future<void> pump(WidgetTester tester, {String lang = 'ar', String initial = '/b
   tester.view.physicalSize = const Size(1170, 2532);
   tester.view.devicePixelRatio = 3;
   addTearDown(tester.view.reset);
-  final router = GoRouter(initialLocation: initial, observers: [linkGuard], routes: [
+  final router = GoRouter(initialLocation: initial, routes: [
     GoRoute(path: '/branches', builder: (_, _) => const BranchesScreen()),
     GoRoute(path: '/branches/:id', builder: (_, s) => BranchDetailScreen(id: int.parse(s.pathParameters['id']!))),
   ]);
@@ -164,10 +164,10 @@ void main() {
 
   testWidgets('web build: Call opens a sheet with the number, Copy and a call attempt (browsers block tel: in embedded pages)', (tester) async {
     PhoneAction.useCallSheet = true;
-    LinkGuard.forceWebBehaviour = true;
+    ExternalLink.useDirectOpen = true;
     addTearDown(() {
       PhoneAction.useCallSheet = false;
-      LinkGuard.forceWebBehaviour = false;
+      ExternalLink.useDirectOpen = false;
     });
     String? copied;
     tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(SystemChannels.platform, (call) async {
@@ -180,15 +180,14 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.byKey(const Key('call-sheet')), findsOneWidget);
     expect(find.text('054 132 9804'), findsWidgets);
-    // While the sheet is open, no web link is live underneath it (a tap on Copy once opened the map),
-    // and the sheet has no Call button that browsers would silently block.
+    // Web builds use no <a> overlays at all (they were mis-positioned and caught taps meant for the
+    // sheet), and the sheet has no Call button that browsers would silently block.
     expect(find.byType(Link), findsNothing);
     await tester.tap(find.byKey(const Key('copy-number')));
     await tester.pumpAndSettle();
     expect(copied, '0541329804');
     expect(find.byKey(const Key('call-sheet')), findsNothing);
     expect(find.text('تم نسخ الرقم'), findsOneWidget);
-    expect(linkUris(tester).map((u) => u.toString()), contains('https://maps.app.goo.gl/gyN2GtVJuXu4Hjk57')); // links back after closing
   });
 
   testWidgets('unknown or inactive branch id → not found (the API never returns inactive branches)', (tester) async {

@@ -579,4 +579,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get noLocationShort => 'No location';
+
+  @override
+  String get more => 'More';
+
+  @override
+  String get discoverNow => 'Discover now';
 }
