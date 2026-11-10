@@ -339,10 +339,10 @@ class InfoRow extends StatelessWidget {
 /// Opens an external URL (website, Google Maps link, tel:).
 ///
 /// Phones (Android/iOS): url_launcher's Link hands the URL to the system (browser, Maps, dialer).
-/// Web: the URL is opened directly from the tap. url_launcher's web Link places an invisible <a>
-/// over the widget, but this Flutter web build positions those elements at the wrong horizontal
-/// offset (about 3× the real x), so taps missed narrow buttons and could hit a neighbouring link
-/// (e.g. "Copy number" opening the map). Opening from the tap avoids that entirely.
+/// Web: a real link is created and clicked from the tap (see open_web.dart). url_launcher's web Link
+/// places an invisible <a> over the widget, but this Flutter web build positions those elements at
+/// the wrong horizontal offset (about 3× the real x), so taps missed narrow buttons and could hit a
+/// neighbouring link (e.g. "Copy number" opening the map).
 class ExternalLink extends StatelessWidget {
   /// True on web builds; tests set it to exercise the web path on the VM.
   static bool useDirectOpen = kIsWeb;
