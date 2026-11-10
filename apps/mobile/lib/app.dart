@@ -46,7 +46,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       return null;
     },
     routes: [
-      GoRoute(path: '/splash', builder: (_, _) => const Scaffold(body: LoadingView())),
+      GoRoute(path: '/splash', builder: (_, _) => const SplashView()),
       GoRoute(path: '/unlock', builder: (_, _) => const UnlockScreen()),
       GoRoute(path: '/welcome', builder: (_, _) => const WelcomeScreen()),
       GoRoute(path: '/register', builder: (_, _) => const RegisterMobileScreen()),

@@ -570,4 +570,13 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get callFromBrowserNote =>
       'Direct calling works in the Zaad app. In a browser, copy the number and call it from your phone app.';
+
+  @override
+  String get openInGoogleMaps => 'Open the branch location in Google Maps';
+
+  @override
+  String get noPhoneShort => 'No phone';
+
+  @override
+  String get noLocationShort => 'No location';
 }

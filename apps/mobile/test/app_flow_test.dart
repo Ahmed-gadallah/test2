@@ -70,6 +70,7 @@ void main() {
     await tester.tap(find.widgetWithText(FilledButton, 'تسجيل الدخول'));
     await tester.pump(const Duration(seconds: 1));
     await tester.pump(const Duration(seconds: 1));
+    await tester.pump(const Duration(seconds: 2)); // let the balance count-up animation finish
     expect(find.text('2,500'), findsOneWidget);
     expect(find.text('تعادل 50 ر.س'), findsOneWidget);
 

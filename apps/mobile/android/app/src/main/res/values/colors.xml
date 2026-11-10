@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Zaad primary #2224C6: the launch screen matches the in-app splash, so there is no white flash. -->
+    <color name="zaad_primary">#2224C6</color>
+</resources>

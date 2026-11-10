@@ -12,6 +12,7 @@ import '../../data/api.dart';
 import '../../data/models.dart';
 import '../../state/providers.dart';
 import '../../widgets/common.dart';
+import '../../widgets/ui_kit.dart';
 
 /// Approval screen for a cashier-initiated redemption (spec §10.1). The app
 /// sends the decision; the ERP validates the live balance and finalizes.
@@ -213,7 +214,7 @@ class _Outcome extends StatelessWidget {
       child: Padding(
         padding: const EdgeInsets.all(24),
         child: Column(children: [
-          Container(padding: const EdgeInsets.all(16), decoration: BoxDecoration(color: bg, shape: BoxShape.circle), child: Icon(icon, color: color, size: 44)),
+          StatusBadge(icon: icon, color: color, background: bg),
           const SizedBox(height: 16),
           Text(title, textAlign: TextAlign.center, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700)),
           if (body.isNotEmpty) ...[const SizedBox(height: 8), Text(body, textAlign: TextAlign.center, style: const TextStyle(color: ZaadColors.textMuted, height: 1.5))],

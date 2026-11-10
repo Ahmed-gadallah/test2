@@ -62,13 +62,13 @@ class InvoicesScreen extends ConsumerWidget {
                 )
               else
                 const SizedBox(height: 10),
-              InvoiceCard(inv),
+              FadeSlideIn(index: i, child: InvoiceCard(inv)),
             ]);
           },
         ),
       );
     }
-    return Scaffold(appBar: PageHeader(t.invoicesTitle), body: RefreshIndicator(onRefresh: n.reload, child: body));
+    return Scaffold(appBar: PageHeader(t.invoicesTitle, icon: Icons.receipt_long_rounded), body: RefreshIndicator(onRefresh: n.reload, child: body));
   }
 }
 
@@ -86,9 +86,8 @@ class InvoiceCard extends StatelessWidget {
         const SizedBox(width: 12),
         Expanded(
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Row(children: [
-              Flexible(child: Text('#${inv.invoiceNumber}', style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15))),
-              const SizedBox(width: 8),
+            Wrap(spacing: 8, runSpacing: 4, crossAxisAlignment: WrapCrossAlignment.center, children: [
+              Text('#${inv.invoiceNumber}', maxLines: 1, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
               invoiceStatusChip(context, inv.status),
             ]),
             const SizedBox(height: 4),

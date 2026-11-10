@@ -84,8 +84,8 @@ void main() {
     expect(find.text('عرض الموقع'), findsNWidgets(2));
     // Branch 7: no phone → no call button, no number; no link → "location not available".
     expect(find.byKey(const Key('call-7')), findsNothing);
-    expect(find.text('رقم الهاتف غير متوفر'), findsOneWidget);
-    expect(find.text('الموقع غير متوفر'), findsOneWidget);
+    expect(find.text('لا يوجد رقم'), findsOneWidget);
+    expect(find.text('لا يوجد موقع'), findsOneWidget);
     final uris = linkUris(tester).map((u) => u.toString()).toList();
     expect(uris, containsAll(['tel:+966541418264', 'https://maps.app.goo.gl/BB8rfs9zdyUzd7a38', 'tel:+966541329804', 'https://maps.app.goo.gl/gyN2GtVJuXu4Hjk57']));
     expect(uris.where((u) => u.startsWith('tel:')), hasLength(2)); // ONE number per branch with a phone
@@ -144,7 +144,8 @@ void main() {
     await pump(tester, initial: '/branches/7', data: [_b(id: 7, phone: null)]);
     expect(find.byKey(const Key('call-branch')), findsNothing);
     expect(find.byKey(const Key('get-directions')), findsOneWidget);
-    expect(linkUris(tester).map((u) => u.toString()), ['https://maps.app.goo.gl/BB8rfs9zdyUzd7a38']);
+    // Directions button + the map illustration card: both open the branch's own link, nothing else.
+    expect(linkUris(tester).map((u) => u.toString()).toSet(), {'https://maps.app.goo.gl/BB8rfs9zdyUzd7a38'});
   });
 
   testWidgets('copy button copies the number in local format and confirms', (tester) async {

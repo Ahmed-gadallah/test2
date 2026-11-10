@@ -52,12 +52,15 @@ class NotificationsScreen extends ConsumerWidget {
               padding: const EdgeInsets.fromLTRB(ZaadSpace.page, 4, ZaadSpace.page, ZaadSpace.xl),
               itemCount: list.length,
               separatorBuilder: (_, _) => const SizedBox(height: 10),
-              itemBuilder: (_, i) => _Tile(list[i], onTap: () async {
-                await api.markNotificationRead(list[i].id);
-                ref.invalidate(notificationsProvider);
-                final route = routeForDeepLink(list[i].deepLink);
-                if (route != null && context.mounted) context.push(route);
-              }),
+              itemBuilder: (_, i) => FadeSlideIn(
+                index: i,
+                child: _Tile(list[i], onTap: () async {
+                  await api.markNotificationRead(list[i].id);
+                  ref.invalidate(notificationsProvider);
+                  final route = routeForDeepLink(list[i].deepLink);
+                  if (route != null && context.mounted) context.push(route);
+                }),
+              ),
             );
           },
         ),

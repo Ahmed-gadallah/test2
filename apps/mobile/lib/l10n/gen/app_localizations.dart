@@ -1117,6 +1117,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Direct calling works in the Zaad app. In a browser, copy the number and call it from your phone app.'**
   String get callFromBrowserNote;
+
+  /// No description provided for @openInGoogleMaps.
+  ///
+  /// In en, this message translates to:
+  /// **'Open the branch location in Google Maps'**
+  String get openInGoogleMaps;
+
+  /// No description provided for @noPhoneShort.
+  ///
+  /// In en, this message translates to:
+  /// **'No phone'**
+  String get noPhoneShort;
+
+  /// No description provided for @noLocationShort.
+  ///
+  /// In en, this message translates to:
+  /// **'No location'**
+  String get noLocationShort;
 }
 
 class _AppLocalizationsDelegate

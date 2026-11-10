@@ -11,6 +11,7 @@ import '../../core/theme.dart';
 import '../../data/api.dart';
 import '../../state/providers.dart';
 import '../../widgets/common.dart';
+import '../../widgets/ui_kit.dart';
 
 /// Carries state between auth steps.
 class AuthFlow {
@@ -28,30 +29,70 @@ class _AuthScaffold extends StatelessWidget {
   const _AuthScaffold({required this.title, this.subtitle, required this.children});
   @override
   Widget build(BuildContext context) => Scaffold(
-        appBar: AppBar(title: const BrandMark(size: 36)),
-        body: Column(children: [
-          const DemoBanner(),
-          Expanded(
-            child: SafeArea(
-              top: false,
+    extendBodyBehindAppBar: true,
+    appBar: AppBar(backgroundColor: Colors.transparent),
+    body: DecoratedBox(
+      decoration: const BoxDecoration(gradient: ZaadGradients.wash),
+      child: SafeArea(
+        child: Column(
+          children: [
+            const DemoBanner(),
+            Expanded(
               child: Center(
                 child: ConstrainedBox(
                   constraints: const BoxConstraints(maxWidth: 460),
-                  child: ListView(padding: const EdgeInsets.fromLTRB(20, 16, 20, 24), children: [
-                    Text(title, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w700)),
-                    if (subtitle != null) ...[
-                      const SizedBox(height: 8),
-                      Text(subtitle!, style: const TextStyle(color: ZaadColors.textMuted, fontSize: 15, height: 1.5)),
+                  child: ListView(
+                    padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
+                    children: [
+                      FadeSlideIn(
+                        child: Center(
+                          child: Container(
+                            padding: const EdgeInsets.all(4),
+                            decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle, boxShadow: ZaadShadows.card),
+                            child: const BrandMark(size: 72),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 22),
+                      FadeSlideIn(
+                        index: 1,
+                        child: Column(
+                          children: [
+                            Text(
+                              title,
+                              textAlign: TextAlign.center,
+                              style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w700),
+                            ),
+                            if (subtitle != null) ...[
+                              const SizedBox(height: 8),
+                              Text(
+                                subtitle!,
+                                textAlign: TextAlign.center,
+                                style: const TextStyle(color: ZaadColors.textMuted, fontSize: 15, height: 1.5),
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+                      FadeSlideIn(
+                        index: 2,
+                        child: SurfaceCard(
+                          radius: 24,
+                          padding: const EdgeInsets.fromLTRB(18, 22, 18, 18),
+                          child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: children),
+                        ),
+                      ),
                     ],
-                    const SizedBox(height: 28),
-                    ...children,
-                  ]),
+                  ),
                 ),
               ),
             ),
-          ),
-        ]),
-      );
+          ],
+        ),
+      ),
+    ),
+  );
 }
 
 class _ErrorBox extends StatelessWidget {
@@ -60,15 +101,23 @@ class _ErrorBox extends StatelessWidget {
   @override
   Widget build(BuildContext context) => text == null
       ? const SizedBox.shrink()
-      : Container(
-          margin: const EdgeInsets.only(bottom: 16),
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(color: ZaadColors.dangerSoft, borderRadius: BorderRadius.circular(12)),
-          child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            const Icon(Icons.error_outline_rounded, color: ZaadColors.danger, size: 20),
-            const SizedBox(width: 8),
-            Expanded(child: Text(text!, style: const TextStyle(color: ZaadColors.danger, height: 1.5))),
-          ]),
+      : ShakeIn(
+          key: ValueKey(text),
+          child: Container(
+            margin: const EdgeInsets.only(bottom: 16),
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(color: ZaadColors.dangerSoft, borderRadius: BorderRadius.circular(12)),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Icon(Icons.error_outline_rounded, color: ZaadColors.danger, size: 20),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(text!, style: const TextStyle(color: ZaadColors.danger, height: 1.5)),
+                ),
+              ],
+            ),
+          ),
         );
 }
 
@@ -79,19 +128,19 @@ class _Busy extends StatelessWidget {
   const _Busy({required this.busy, required this.label, required this.onPressed});
   @override
   Widget build(BuildContext context) => FilledButton(
-        onPressed: busy ? null : onPressed,
-        child: busy ? const SizedBox(width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 2.5, color: Colors.white)) : Text(label),
-      );
+    onPressed: busy ? null : onPressed,
+    child: busy ? const SizedBox(width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 2.5, color: Colors.white)) : Text(label),
+  );
 }
 
 Widget _mobileField(BuildContext context, TextEditingController c, {bool autofocus = true}) => TextField(
-      controller: c,
-      autofocus: autofocus,
-      keyboardType: TextInputType.phone,
-      textDirection: TextDirection.ltr,
-      inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9+٠-٩ ]')), LengthLimitingTextInputFormatter(16)],
-      decoration: InputDecoration(labelText: context.t.mobileNumber, hintText: context.t.mobileHint, prefixIcon: const Icon(Icons.phone_iphone_rounded)),
-    );
+  controller: c,
+  autofocus: autofocus,
+  keyboardType: TextInputType.phone,
+  textDirection: TextDirection.ltr,
+  inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9+٠-٩ ]')), LengthLimitingTextInputFormatter(16)],
+  decoration: InputDecoration(labelText: context.t.mobileNumber, hintText: context.t.mobileHint, prefixIcon: const Icon(Icons.phone_iphone_rounded)),
+);
 
 // ── Register: mobile + consent ─────────────────────────────────────────────
 class RegisterMobileScreen extends ConsumerStatefulWidget {
@@ -110,7 +159,10 @@ class _RegisterMobileState extends ConsumerState<RegisterMobileScreen> {
   Future<void> _submit() async {
     final t = context.t;
     if (!_reset && !_consent) return setState(() => _error = t.privacyRequired);
-    setState(() { _busy = true; _error = null; });
+    setState(() {
+      _busy = true;
+      _error = null;
+    });
     try {
       final info = await ref.read(apiProvider).sendOtp(_mobile.text, widget.purpose);
       if (mounted) context.push('/otp', extra: AuthFlow(_mobile.text, widget.purpose, resendAfter: info.resendAfterSeconds));
@@ -144,8 +196,12 @@ class _RegisterMobileState extends ConsumerState<RegisterMobileScreen> {
         _Busy(busy: _busy, label: t.continueLabel, onPressed: _submit),
         if (AppConfig.isDemo) ...[
           const SizedBox(height: 16),
-          const Text('0500000001 · 0500000002 · 0500000003 · 0500000004 · 0599999999',
-              textAlign: TextAlign.center, textDirection: TextDirection.ltr, style: TextStyle(color: ZaadColors.textMuted, fontSize: 12)),
+          const Text(
+            '0500000001 · 0500000002 · 0500000003 · 0500000004 · 0599999999',
+            textAlign: TextAlign.center,
+            textDirection: TextDirection.ltr,
+            style: TextStyle(color: ZaadColors.textMuted, fontSize: 12),
+          ),
         ],
       ],
     );
@@ -189,7 +245,10 @@ class _OtpState extends ConsumerState<OtpScreen> {
 
   Future<void> _verify() async {
     if (_code.text.length != 6) return;
-    setState(() { _busy = true; _error = null; });
+    setState(() {
+      _busy = true;
+      _error = null;
+    });
     try {
       final token = await ref.read(apiProvider).verifyOtp(widget.flow.mobile, widget.flow.purpose, _code.text);
       if (mounted) context.pushReplacement('/password', extra: AuthFlow(widget.flow.mobile, widget.flow.purpose, verificationToken: token));
@@ -203,7 +262,10 @@ class _OtpState extends ConsumerState<OtpScreen> {
   Future<void> _resend() async {
     try {
       final info = await ref.read(apiProvider).sendOtp(widget.flow.mobile, widget.flow.purpose);
-      setState(() { _left = info.resendAfterSeconds; _error = null; });
+      setState(() {
+        _left = info.resendAfterSeconds;
+        _error = null;
+      });
       _startTimer();
     } catch (e) {
       setState(() => _error = errorText(context.t, e));
@@ -230,7 +292,15 @@ class _OtpState extends ConsumerState<OtpScreen> {
           onChanged: (v) => v.length == 6 ? _verify() : null,
           decoration: const InputDecoration(counterText: '', hintText: '••••••'),
         ),
-        if (AppConfig.isDemo) Padding(padding: const EdgeInsets.only(top: 8), child: Text(t.otpDemoHint, textAlign: TextAlign.center, style: const TextStyle(color: ZaadColors.textMuted))),
+        if (AppConfig.isDemo)
+          Padding(
+            padding: const EdgeInsets.only(top: 8),
+            child: Text(
+              t.otpDemoHint,
+              textAlign: TextAlign.center,
+              style: const TextStyle(color: ZaadColors.textMuted),
+            ),
+          ),
         const SizedBox(height: 20),
         _Busy(busy: _busy, label: t.verify, onPressed: _verify),
         const SizedBox(height: 8),
@@ -258,7 +328,10 @@ class _PasswordState extends ConsumerState<PasswordScreen> {
     final t = context.t;
     if (!_rule.hasMatch(_p1.text)) return setState(() => _error = t.passwordRule);
     if (_p1.text != _p2.text) return setState(() => _error = t.passwordsDontMatch);
-    setState(() { _busy = true; _error = null; });
+    setState(() {
+      _busy = true;
+      _error = null;
+    });
     final api = ref.read(apiProvider);
     try {
       if (widget.flow.purpose == 'register') {
@@ -287,9 +360,19 @@ class _PasswordState extends ConsumerState<PasswordScreen> {
       subtitle: t.createPasswordSubtitle,
       children: [
         _ErrorBox(_error),
-        TextField(controller: _p1, obscureText: _obscure, autofocus: true, decoration: InputDecoration(labelText: widget.flow.purpose == 'register' ? t.password : t.newPassword, suffixIcon: eye)),
+        TextField(
+          controller: _p1,
+          obscureText: _obscure,
+          autofocus: true,
+          decoration: InputDecoration(labelText: widget.flow.purpose == 'register' ? t.password : t.newPassword, suffixIcon: eye),
+        ),
         const SizedBox(height: 12),
-        TextField(controller: _p2, obscureText: _obscure, onSubmitted: (_) => _submit(), decoration: InputDecoration(labelText: t.confirmPassword)),
+        TextField(
+          controller: _p2,
+          obscureText: _obscure,
+          onSubmitted: (_) => _submit(),
+          decoration: InputDecoration(labelText: t.confirmPassword),
+        ),
         const SizedBox(height: 24),
         _Busy(busy: _busy, label: t.continueLabel, onPressed: _submit),
       ],
@@ -317,7 +400,10 @@ class _LoginState extends ConsumerState<LoginScreen> {
   }
 
   Future<void> _submit() async {
-    setState(() { _busy = true; _error = null; });
+    setState(() {
+      _busy = true;
+      _error = null;
+    });
     try {
       final tokens = await ref.read(apiProvider).login(_mobile.text, _password.text);
       await ref.read(sessionProvider.notifier).signedIn(tokens, _mobile.text);
@@ -348,7 +434,10 @@ class _LoginState extends ConsumerState<LoginScreen> {
             suffixIcon: IconButton(icon: Icon(_obscure ? Icons.visibility_outlined : Icons.visibility_off_outlined), onPressed: () => setState(() => _obscure = !_obscure)),
           ),
         ),
-        Align(alignment: AlignmentDirectional.centerEnd, child: TextButton(onPressed: () => context.push('/forgot'), child: Text(t.forgotPassword))),
+        Align(
+          alignment: AlignmentDirectional.centerEnd,
+          child: TextButton(onPressed: () => context.push('/forgot'), child: Text(t.forgotPassword)),
+        ),
         const SizedBox(height: 8),
         _Busy(busy: _busy, label: t.login, onPressed: _submit),
         const SizedBox(height: 12),
@@ -376,20 +465,32 @@ class _UnlockState extends ConsumerState<UnlockScreen> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-        body: SafeArea(
-          child: Center(
-            child: Padding(
-              padding: const EdgeInsets.all(32),
-              child: Column(mainAxisSize: MainAxisSize.min, children: [
-                const BrandMark(size: 96),
+    body: DecoratedBox(
+      decoration: const BoxDecoration(gradient: ZaadGradients.wash),
+      child: SafeArea(
+        child: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(32),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                FadeSlideIn(
+                  child: Container(
+                    padding: const EdgeInsets.all(5),
+                    decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle, boxShadow: ZaadShadows.card),
+                    child: const BrandMark(size: 96),
+                  ),
+                ),
                 const SizedBox(height: 32),
                 const Icon(Icons.fingerprint_rounded, size: 72, color: ZaadColors.primary),
                 const SizedBox(height: 24),
                 FilledButton(onPressed: _unlock, child: Text(context.t.unlockAction)),
                 TextButton(onPressed: () => ref.read(sessionProvider.notifier).logout(), child: Text(context.t.logout)),
-              ]),
+              ],
             ),
           ),
         ),
-      );
+      ),
+    ),
+  );
 }

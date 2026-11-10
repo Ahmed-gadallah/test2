@@ -177,7 +177,7 @@ class OffersCarousel extends ConsumerStatefulWidget {
 }
 
 class _OffersCarouselState extends ConsumerState<OffersCarousel> {
-  final _page = PageController(viewportFraction: 1);
+  final _page = PageController(viewportFraction: 0.92);
   int _index = 0;
 
   @override
@@ -209,9 +209,19 @@ class _OffersCarouselState extends ConsumerState<OffersCarousel> {
                 controller: _page,
                 itemCount: list.length,
                 onPageChanged: (i) => setState(() => _index = i),
-                itemBuilder: (_, i) => Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 2),
-                  child: OfferBanner(list[i]),
+                // The next offer peeks in; cards away from the centre ease down slightly.
+                itemBuilder: (_, i) => AnimatedBuilder(
+                  animation: _page,
+                  builder: (context, child) {
+                    double page = _index.toDouble();
+                    if (_page.hasClients && _page.position.haveDimensions) page = _page.page ?? page;
+                    final d = (page - i).abs().clamp(0.0, 1.0);
+                    return Transform.scale(scale: 1 - 0.05 * d, child: Opacity(opacity: 1 - 0.25 * d, child: child));
+                  },
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 5),
+                    child: OfferBanner(list[i]),
+                  ),
                 ),
               ),
             ),
@@ -222,7 +232,8 @@ class _OffersCarouselState extends ConsumerState<OffersCarousel> {
                 children: [
                   for (var i = 0; i < list.length; i++)
                     AnimatedContainer(
-                      duration: const Duration(milliseconds: 220),
+                      duration: ZaadMotion.base,
+                      curve: ZaadMotion.curve,
                       margin: const EdgeInsets.symmetric(horizontal: 3),
                       width: i == _index ? 20 : 7,
                       height: 7,
@@ -249,7 +260,7 @@ class OffersScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final t = context.t;
     return Scaffold(
-      appBar: PageHeader(t.offersTitle),
+      appBar: PageHeader(t.offersTitle, icon: Icons.local_offer_rounded),
       body: RefreshIndicator(
         onRefresh: () async => ref.invalidate(offersProvider),
         child: AsyncBody(

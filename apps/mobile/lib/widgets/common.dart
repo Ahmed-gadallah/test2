@@ -5,6 +5,7 @@ import '../core/config.dart';
 import '../core/error_text.dart';
 import '../core/format.dart';
 import '../core/theme.dart';
+import 'ui_kit.dart';
 import '../l10n/gen/app_localizations.dart';
 import '../state/providers.dart';
 
@@ -183,6 +184,40 @@ class NotificationBell extends ConsumerWidget {
         backgroundColor: const Color(0xFFE5484D),
         label: Text(unread > 9 ? '9+' : '$unread'),
         child: Icon(Icons.notifications_none_rounded, color: color, size: 26),
+      ),
+    );
+  }
+}
+
+/// Shown only while the stored session is being restored (the router leaves as soon as it is
+/// known), so it never delays startup: the logo simply reveals itself during that wait.
+class SplashView extends StatelessWidget {
+  const SplashView({super.key});
+  @override
+  Widget build(BuildContext context) {
+    final reduce = MediaQuery.of(context).disableAnimations;
+    final logo = Container(
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(color: Colors.white, shape: BoxShape.circle, boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.18), blurRadius: 40, offset: const Offset(0, 16))]),
+      child: const BrandMark(size: 112),
+    );
+    return Scaffold(
+      body: Container(
+        decoration: const BoxDecoration(gradient: ZaadGradients.hero),
+        child: Stack(alignment: Alignment.center, children: [
+          const PositionedDirectional(top: -120, end: -90, child: SoftGlow(size: 320, alpha: 0.10)),
+          const PositionedDirectional(bottom: -100, start: -80, child: SoftGlow(size: 260, alpha: 0.08)),
+          reduce
+              ? logo
+              : TweenAnimationBuilder<double>(
+                  tween: Tween(begin: 0, end: 1),
+                  duration: const Duration(milliseconds: 700),
+                  curve: ZaadMotion.emphasized,
+                  builder: (_, t, c) => Opacity(opacity: t, child: Transform.scale(scale: 0.82 + 0.18 * t, child: c)),
+                  child: logo,
+                ),
+          const PositionedDirectional(bottom: 64, child: SizedBox(width: 26, height: 26, child: CircularProgressIndicator(strokeWidth: 2.4, color: Colors.white70))),
+        ]),
       ),
     );
   }

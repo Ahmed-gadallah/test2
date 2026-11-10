@@ -48,7 +48,7 @@ class _ProfileState extends ConsumerState<ProfileScreen> {
     final api = ref.read(apiProvider);
 
     return Scaffold(
-      appBar: PageHeader(t.profileTitle),
+      appBar: PageHeader(t.profileTitle, icon: Icons.person_rounded),
       body: ListView(padding: const EdgeInsets.fromLTRB(ZaadSpace.page, 4, ZaadSpace.page, ZaadSpace.xl), children: [
         FadeSlideIn(
           child: AsyncBody(

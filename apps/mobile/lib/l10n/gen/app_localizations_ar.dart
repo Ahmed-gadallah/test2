@@ -565,4 +565,13 @@ class AppLocalizationsAr extends AppLocalizations {
   @override
   String get callFromBrowserNote =>
       'الاتصال المباشر متاح في تطبيق زاد. من المتصفح: انسخ الرقم واتصل به من تطبيق الهاتف.';
+
+  @override
+  String get openInGoogleMaps => 'افتح موقع الفرع في خرائط جوجل';
+
+  @override
+  String get noPhoneShort => 'لا يوجد رقم';
+
+  @override
+  String get noLocationShort => 'لا يوجد موقع';
 }

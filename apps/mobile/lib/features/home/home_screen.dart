@@ -33,47 +33,56 @@ class HomeScreen extends ConsumerWidget {
     }
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
-      value: SystemUiOverlayStyle.light,
+      value: SystemUiOverlayStyle.dark,
       child: Scaffold(
-        body: RefreshIndicator(
-          onRefresh: refresh,
-          edgeOffset: 80,
-          child: CustomScrollView(
-            slivers: [
-              const SliverToBoxAdapter(child: _HeaderWithCard()),
-              SliverPadding(
-                padding: const EdgeInsets.fromLTRB(
-                  ZaadSpace.page,
-                  ZaadSpace.lg,
-                  ZaadSpace.page,
-                  ZaadSpace.xl,
-                ),
-                sliver: SliverList.list(
-                  children: [
-                    for (final r in pending.where((r) => r.isActionable)) ...[
-                      FadeSlideIn(child: PendingRedemptionBanner(r)),
-                      const SizedBox(height: ZaadSpace.lg),
-                    ],
-                    FadeSlideIn(index: 1, child: SectionHeader(t.quickActions)),
-                    const FadeSlideIn(index: 2, child: _QuickActions()),
-                    const SizedBox(height: ZaadSpace.md),
-                    const FadeSlideIn(index: 3, child: ShopOnlineCard()),
-                    const SizedBox(height: ZaadSpace.md),
-                    const FadeSlideIn(index: 3, child: BranchesEntryCard()),
-                    const SizedBox(height: ZaadSpace.lg),
-                    FadeSlideIn(
-                      index: 4,
-                      child: SectionHeader(
-                        t.latestOffers,
-                        actionLabel: t.seeAll,
-                        onAction: () => context.go('/offers'),
-                      ),
+        body: DecoratedBox(
+          // Light blue wash behind the header fading into the page background.
+          decoration: const BoxDecoration(gradient: ZaadGradients.wash),
+          child: RefreshIndicator(
+            onRefresh: refresh,
+            child: CustomScrollView(
+              slivers: [
+                SliverSafeArea(
+                  bottom: false,
+                  sliver: SliverPadding(
+                    padding: const EdgeInsets.fromLTRB(
+                      ZaadSpace.page,
+                      ZaadSpace.sm,
+                      ZaadSpace.page,
+                      ZaadSpace.xl,
                     ),
-                    const FadeSlideIn(index: 5, child: OffersCarousel()),
-                  ],
+                    sliver: SliverList.list(
+                      children: [
+                        const _HomeHeader(),
+                        const SizedBox(height: ZaadSpace.lg + 2),
+                        FadeSlideIn(
+                          child: PointsCard(
+                            onTap: () => context.push('/points'),
+                          ),
+                        ),
+                        const SizedBox(height: ZaadSpace.lg),
+                        for (final r in pending.where((r) => r.isActionable)) ...[
+                          FadeSlideIn(index: 1, child: PendingRedemptionBanner(r)),
+                          const SizedBox(height: ZaadSpace.lg),
+                        ],
+                        FadeSlideIn(index: 1, child: SectionHeader(t.quickActions)),
+                        const _QuickActions(),
+                        const SizedBox(height: ZaadSpace.lg),
+                        FadeSlideIn(
+                          index: 5,
+                          child: SectionHeader(
+                            t.latestOffers,
+                            actionLabel: t.seeAll,
+                            onAction: () => context.go('/offers'),
+                          ),
+                        ),
+                        const FadeSlideIn(index: 6, child: OffersCarousel()),
+                      ],
+                    ),
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
@@ -81,91 +90,70 @@ class HomeScreen extends ConsumerWidget {
   }
 }
 
-/// Blue header (logo, notifications, settings, greeting) with the points card overlapping its lower edge.
-class _HeaderWithCard extends ConsumerWidget {
-  const _HeaderWithCard();
-  static const _overlap = 72.0;
+/// Clean light header: official logo, greeting, notifications and settings.
+class _HomeHeader extends ConsumerWidget {
+  const _HomeHeader();
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final t = context.t;
     final name = ref.watch(profileProvider).value?.name?.trim();
-    return Stack(
+    return Row(
       children: [
-        Positioned.fill(
-          bottom: _overlap,
-          child: Container(
-            decoration: const BoxDecoration(
-              gradient: ZaadGradients.header,
-              borderRadius: BorderRadius.vertical(
-                bottom: Radius.circular(ZaadSpace.radiusXl + 4),
+        Container(
+          padding: const EdgeInsets.all(3),
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            shape: BoxShape.circle,
+            boxShadow: ZaadShadows.soft,
+          ),
+          child: const BrandMark(size: 46),
+        ),
+        const SizedBox(width: ZaadSpace.md),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                // ERP names are cashier-typed; greet neutrally when empty (assessment G4).
+                name == null || name.isEmpty
+                    ? '${t.helloNoName} 👋'
+                    : '${t.hello(name)} 👋',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w700,
+                  color: ZaadColors.text,
+                ),
               ),
-            ),
-            clipBehavior: Clip.antiAlias,
-            // Two soft circles give depth without decoration noise (matches the reference direction).
-            child: Stack(
-              children: [
-                PositionedDirectional(
-                  top: -90,
-                  end: -70,
-                  child: _Glow(size: 260, alpha: 0.07),
+              Text(
+                t.appName,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  fontSize: 13,
+                  color: ZaadColors.textMuted,
                 ),
-                PositionedDirectional(
-                  bottom: -60,
-                  start: -80,
-                  child: _Glow(size: 200, alpha: 0.05),
-                ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
-        SafeArea(
-          bottom: false,
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(
-              ZaadSpace.page,
-              ZaadSpace.sm,
-              ZaadSpace.page,
-              0,
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    const BrandMark(size: 52),
-                    const Spacer(),
-                    NotificationBell(
-                      onTap: () => context.push('/notifications'),
-                    ),
-                    IconButton(
-                      onPressed: () => context.go('/profile'),
-                      tooltip: t.settings,
-                      icon: const Icon(
-                        Icons.settings_outlined,
-                        color: Colors.white,
-                        size: 26,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: ZaadSpace.md),
-                Text(
-                  // ERP names are cashier-typed; greet neutrally when empty (assessment G4).
-                  name == null || name.isEmpty
-                      ? '${t.helloNoName} 👋'
-                      : '${t.hello(name)} 👋',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 24,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                const SizedBox(height: ZaadSpace.lg + 2),
-                const FadeSlideIn(child: PointsCard()),
-              ],
+        _CircleAction(
+          child: NotificationBell(
+            color: ZaadColors.text,
+            onTap: () => context.push('/notifications'),
+          ),
+        ),
+        const SizedBox(width: ZaadSpace.sm),
+        _CircleAction(
+          child: IconButton(
+            onPressed: () => context.go('/profile'),
+            tooltip: t.settings,
+            icon: const Icon(
+              Icons.settings_outlined,
+              color: ZaadColors.text,
+              size: 24,
             ),
           ),
         ),
@@ -174,24 +162,28 @@ class _HeaderWithCard extends ConsumerWidget {
   }
 }
 
-class _Glow extends StatelessWidget {
-  final double size;
-  final double alpha;
-  const _Glow({required this.size, required this.alpha});
+class _CircleAction extends StatelessWidget {
+  final Widget child;
+  const _CircleAction({required this.child});
   @override
   Widget build(BuildContext context) => Container(
-    width: size,
-    height: size,
-    decoration: BoxDecoration(
+    width: 46,
+    height: 46,
+    alignment: Alignment.center,
+    decoration: const BoxDecoration(
+      color: Colors.white,
       shape: BoxShape.circle,
-      color: Colors.white.withValues(alpha: alpha),
+      boxShadow: ZaadShadows.soft,
     ),
+    child: child,
   );
 }
 
 /// The hero loyalty card. Every number comes from the ERP via the API; the app only formats it.
 class PointsCard extends ConsumerWidget {
-  const PointsCard({super.key});
+  /// Home opens the points history; the points screen shows the card without a tap action.
+  final VoidCallback? onTap;
+  const PointsCard({super.key, this.onTap});
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final t = context.t;
@@ -199,21 +191,25 @@ class PointsCard extends ConsumerWidget {
     final points = ref.watch(pointsProvider);
     const muted = TextStyle(color: Color(0xCCFFFFFF), fontSize: 13);
 
-    return Container(
+    final radius = BorderRadius.circular(ZaadSpace.radiusXl);
+    final card = Container(
       width: double.infinity,
       decoration: BoxDecoration(
         gradient: ZaadGradients.hero,
-        borderRadius: BorderRadius.circular(ZaadSpace.radiusXl),
+        borderRadius: radius,
         border: Border.all(color: Colors.white.withValues(alpha: 0.16)),
-        boxShadow: ZaadShadows.raised,
+        boxShadow: ZaadShadows.glow,
       ),
       clipBehavior: Clip.antiAlias,
       child: Stack(
         children: [
+          // Lighting: a soft highlight from the top corner and a low glow — depth without noise.
+          const PositionedDirectional(top: -120, start: -80, child: SoftGlow(size: 300, alpha: 0.12)),
+          const PositionedDirectional(bottom: -90, end: -40, child: SoftGlow(size: 200, alpha: 0.08)),
           // Logo watermark (official artwork, low opacity).
           PositionedDirectional(
             end: -18,
-            top: 14,
+            bottom: -24,
             child: IgnorePointer(
               child: Opacity(
                 opacity: 0.10,
@@ -257,20 +253,16 @@ class PointsCard extends ConsumerWidget {
                     crossAxisAlignment: CrossAxisAlignment.baseline,
                     textBaseline: TextBaseline.alphabetic,
                     children: [
-                      // Animate between balances (e.g. after a redemption) — display only.
-                      TweenAnimationBuilder<double>(
-                        tween: Tween(end: value.points.toDouble()),
-                        duration: const Duration(milliseconds: 700),
-                        curve: Curves.easeOutCubic,
-                        builder: (_, v, _) => Text(
-                          f.number(v.round()),
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 44,
-                            fontWeight: FontWeight.w700,
-                            height: 1.05,
-                            letterSpacing: -0.5,
-                          ),
+                      // Counts up on load and between balances — display only, value from the ERP.
+                      AnimatedCount(
+                        value.points,
+                        format: f.number,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 46,
+                          fontWeight: FontWeight.w700,
+                          height: 1.05,
+                          letterSpacing: -0.5,
                         ),
                       ),
                       const SizedBox(width: 8),
@@ -379,9 +371,21 @@ class PointsCard extends ConsumerWidget {
               _ => const _PointsCardSkeleton(),
             },
           ),
+          if (onTap != null && points.hasValue)
+            PositionedDirectional(
+              top: 18,
+              end: 18,
+              child: Container(
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.16), shape: BoxShape.circle),
+                child: const Icon(Icons.chevron_right_rounded, color: Colors.white, size: 20),
+              ),
+            ),
         ],
       ),
     );
+    if (onTap == null) return card;
+    return Pressable(onTap: onTap, borderRadius: radius, child: card);
   }
 }
 
@@ -469,30 +473,37 @@ class PendingRedemptionBanner extends StatelessWidget {
   }
 }
 
+/// Quick actions as a 3×2 grid of icon cards. Same destinations as before
+/// (invoices, points, offers, profile, shop online, branches).
 class _QuickActions extends StatelessWidget {
   const _QuickActions();
   @override
   Widget build(BuildContext context) {
     final t = context.t;
-    final items = [
-      (Icons.receipt_long_rounded, t.myInvoices, () => context.go('/invoices')),
-      (Icons.stars_rounded, t.myPoints, () => context.push('/points')),
-      (Icons.local_offer_rounded, t.offers, () => context.go('/offers')),
-      (Icons.person_rounded, t.myProfile, () => context.go('/profile')),
+    final items = <Widget>[
+      QuickActionCard(icon: Icons.receipt_long_rounded, label: t.myInvoices, onTap: () => context.go('/invoices')),
+      QuickActionCard(icon: Icons.stars_rounded, label: t.myPoints, onTap: () => context.push('/points')),
+      QuickActionCard(icon: Icons.local_offer_rounded, label: t.offers, onTap: () => context.go('/offers')),
+      QuickActionCard(icon: Icons.storefront_rounded, label: t.branchesTitle, onTap: () => context.go('/branches')),
+      ExternalLink(
+        uri: onlineStoreUri,
+        builder: (open) => QuickActionCard(icon: Icons.shopping_bag_rounded, label: t.shopOnline, onTap: open ?? () {}, external: true),
+      ),
+      QuickActionCard(icon: Icons.person_rounded, label: t.myProfile, onTap: () => context.go('/profile')),
     ];
-    return Row(
-      children: [
-        for (var i = 0; i < items.length; i++) ...[
-          if (i > 0) const SizedBox(width: ZaadSpace.md - 2),
-          Expanded(
-            child: QuickActionCard(
-              icon: items[i].$1,
-              label: items[i].$2,
-              onTap: items[i].$3,
-            ),
-          ),
-        ],
-      ],
+    return LayoutBuilder(
+      builder: (context, c) {
+        const gap = ZaadSpace.md;
+        final w = (c.maxWidth - gap * 2) / 3;
+        return Wrap(
+          spacing: gap,
+          runSpacing: gap,
+          children: [
+            for (var i = 0; i < items.length; i++)
+              SizedBox(width: w, child: FadeSlideIn(index: 2 + i ~/ 3, child: items[i])),
+          ],
+        );
+      },
     );
   }
 }
@@ -501,21 +512,50 @@ class QuickActionCard extends StatelessWidget {
   final IconData icon;
   final String label;
   final VoidCallback onTap;
+  final bool external;
   const QuickActionCard({
     super.key,
     required this.icon,
     required this.label,
     required this.onTap,
+    this.external = false,
   });
   @override
   Widget build(BuildContext context) => SurfaceCard(
     onTap: onTap,
-    padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 4),
+    padding: const EdgeInsets.fromLTRB(6, 16, 6, 14),
     child: Column(
       children: [
-        IconTile(icon, size: 50),
+        Stack(
+          clipBehavior: Clip.none,
+          children: [
+            Container(
+              width: 52,
+              height: 52,
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [Color(0xFFEEEFFF), ZaadColors.primarySoft],
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                ),
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Icon(icon, color: ZaadColors.primary, size: 27),
+            ),
+            if (external)
+              const PositionedDirectional(
+                top: -4,
+                end: -6,
+                child: CircleAvatar(
+                  radius: 9,
+                  backgroundColor: Colors.white,
+                  child: Icon(Icons.north_east_rounded, size: 12, color: ZaadColors.primary),
+                ),
+              ),
+          ],
+        ),
         const SizedBox(height: 10),
-        // Scales down slightly rather than truncating long labels (e.g. "My invoices" on small phones).
+        // Scales down slightly rather than truncating long labels on small phones.
         FittedBox(
           fit: BoxFit.scaleDown,
           child: Padding(
@@ -529,98 +569,6 @@ class QuickActionCard extends StatelessWidget {
           ),
         ),
       ],
-    ),
-  );
-}
-
-/// Entry to the Branch Locator (فروع زاد).
-class BranchesEntryCard extends StatelessWidget {
-  const BranchesEntryCard({super.key});
-  @override
-  Widget build(BuildContext context) => SurfaceCard(
-    key: const Key('branches-entry'),
-    onTap: () => context.go('/branches'),
-    padding: const EdgeInsets.all(14),
-    child: Row(
-      children: [
-        const IconTile(Icons.storefront_rounded, size: 56),
-        const SizedBox(width: 14),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(context.t.branchesTitle, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16)),
-              const SizedBox(height: 2),
-              Text(context.t.branchesHomeSubtitle, style: const TextStyle(color: ZaadColors.textMuted, fontSize: 13)),
-            ],
-          ),
-        ),
-        const Icon(Icons.chevron_right_rounded, color: ZaadColors.textMuted),
-      ],
-    ),
-  );
-}
-
-/// External link to the existing store (spec §14). No loyalty claims.
-class ShopOnlineCard extends StatelessWidget {
-  const ShopOnlineCard({super.key});
-  @override
-  Widget build(BuildContext context) => ExternalLink(
-    uri: onlineStoreUri,
-    builder: (open) => SurfaceCard(
-      onTap: open,
-      padding: const EdgeInsets.all(14),
-      child: Row(
-        children: [
-          Container(
-            width: 56,
-            height: 56,
-            decoration: BoxDecoration(
-              gradient: ZaadGradients.hero,
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: const Icon(
-              Icons.shopping_bag_rounded,
-              color: Colors.white,
-              size: 28,
-            ),
-          ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  context.t.shopOnline,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w700,
-                    fontSize: 16,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                const Text(
-                  'zaadonline.com',
-                  textDirection: TextDirection.ltr,
-                  style: TextStyle(color: ZaadColors.textMuted, fontSize: 13),
-                ),
-              ],
-            ),
-          ),
-          Container(
-            width: 40,
-            height: 40,
-            decoration: const BoxDecoration(
-              color: ZaadColors.primarySoft,
-              shape: BoxShape.circle,
-            ),
-            child: const Icon(
-              Icons.open_in_new_rounded,
-              size: 20,
-              color: ZaadColors.primary,
-            ),
-          ),
-        ],
-      ),
     ),
   );
 }

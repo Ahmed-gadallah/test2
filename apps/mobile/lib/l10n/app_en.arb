@@ -190,5 +190,8 @@
   "copyNumber": "Copy number",
   "numberCopied": "Number copied",
   "copyFailed": "Couldn't copy — long-press the number to select and copy it",
-  "callFromBrowserNote": "Direct calling works in the Zaad app. In a browser, copy the number and call it from your phone app."
+  "callFromBrowserNote": "Direct calling works in the Zaad app. In a browser, copy the number and call it from your phone app.",
+  "openInGoogleMaps": "Open the branch location in Google Maps",
+  "noPhoneShort": "No phone",
+  "noLocationShort": "No location"
 }

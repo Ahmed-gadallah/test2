@@ -73,7 +73,7 @@ class PointsScreen extends ConsumerWidget {
         padding: EdgeInsets.only(top: out.isEmpty ? 0 : 16, bottom: 10),
         child: Text(monthLabel(context, group.first.occurredAt), style: const TextStyle(color: ZaadColors.textMuted, fontWeight: FontWeight.w600, fontSize: 13)),
       ));
-      out.add(SurfaceCard(
+      out.add(FadeSlideIn(index: out.length ~/ 2, child: SurfaceCard(
         padding: const EdgeInsets.symmetric(vertical: 4),
         child: Column(children: [
           for (var j = 0; j < group.length; j++) ...[
@@ -81,7 +81,7 @@ class PointsScreen extends ConsumerWidget {
             PointsEntryTile(group[j]),
           ],
         ]),
-      ));
+      )));
       start = i;
     }
     return out;

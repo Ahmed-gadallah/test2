@@ -37,11 +37,25 @@ class ZaadSpace {
   static const radiusXl = 28.0; // hero card, header
 }
 
+/// Motion tokens — one vocabulary for every animation in the app.
+/// Short and decelerating: things settle into place, nothing bounces or loops.
+class ZaadMotion {
+  static const fast = Duration(milliseconds: 150); // press feedback, small toggles
+  static const base = Duration(milliseconds: 280); // indicators, chips, page transitions
+  static const slow = Duration(milliseconds: 420); // entrance of cards and sections
+  static const count = Duration(milliseconds: 1100); // number counting (points balance)
+  static const stagger = Duration(milliseconds: 60); // delay step between list items
+  static const curve = Curves.easeOutCubic;
+  static const emphasized = Curves.easeOutQuart;
+}
+
 /// Shadows are tinted with the brand blue so depth reads as "Zaad", not grey.
 class ZaadShadows {
   static const card = [BoxShadow(color: Color(0x0F2224C6), blurRadius: 24, offset: Offset(0, 8))];
   static const raised = [BoxShadow(color: Color(0x332224C6), blurRadius: 32, offset: Offset(0, 14))];
   static const nav = [BoxShadow(color: Color(0x1A191B32), blurRadius: 28, offset: Offset(0, 8))];
+  static const soft = [BoxShadow(color: Color(0x0A2224C6), blurRadius: 16, offset: Offset(0, 4))];
+  static const glow = [BoxShadow(color: Color(0x552224C6), blurRadius: 40, offset: Offset(0, 18), spreadRadius: -6)];
 }
 
 class ZaadGradients {
@@ -50,6 +64,13 @@ class ZaadGradients {
     stops: [0, 0.45, 1],
     begin: AlignmentDirectional.topStart,
     end: AlignmentDirectional.bottomEnd,
+  );
+  /// Very light blue wash behind light headers (home, auth).
+  static const wash = LinearGradient(
+    colors: [Color(0xFFE6E8FF), Color(0xFFF1F2FD), ZaadColors.background],
+    stops: [0, 0.55, 1],
+    begin: Alignment.topCenter,
+    end: Alignment.bottomCenter,
   );
   static const header = LinearGradient(
     colors: [ZaadColors.primary, ZaadColors.primaryDark],
@@ -73,14 +94,23 @@ ThemeData buildTheme() {
   const buttonText = TextStyle(fontFamily: _font, fontSize: 16, fontWeight: FontWeight.w600);
   return base.copyWith(
     textTheme: base.textTheme.apply(bodyColor: ZaadColors.text, displayColor: ZaadColors.text),
-    // Fade-forward on Android/web, native slide on iOS.
+    // Soft fade + short rise on Android/web; native slide (with swipe-back) on iOS.
     pageTransitionsTheme: const PageTransitionsTheme(builders: {
-      TargetPlatform.android: FadeForwardsPageTransitionsBuilder(),
+      TargetPlatform.android: ZaadPageTransitionsBuilder(),
       TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
       TargetPlatform.macOS: CupertinoPageTransitionsBuilder(),
-      TargetPlatform.linux: FadeForwardsPageTransitionsBuilder(),
-      TargetPlatform.windows: FadeForwardsPageTransitionsBuilder(),
+      TargetPlatform.linux: ZaadPageTransitionsBuilder(),
+      TargetPlatform.windows: ZaadPageTransitionsBuilder(),
     }),
+    // Round white back button (reference design); BackButtonIcon mirrors itself in RTL.
+    actionIconTheme: ActionIconThemeData(
+      backButtonIconBuilder: (context) => Container(
+        width: 40,
+        height: 40,
+        decoration: const BoxDecoration(color: ZaadColors.surface, shape: BoxShape.circle, boxShadow: ZaadShadows.soft),
+        child: const Icon(Icons.arrow_back_rounded, size: 22, color: ZaadColors.text),
+      ),
+    ),
     appBarTheme: const AppBarTheme(
       backgroundColor: ZaadColors.background,
       foregroundColor: ZaadColors.text,
@@ -126,4 +156,27 @@ ThemeData buildTheme() {
     ),
     dividerTheme: const DividerThemeData(color: ZaadColors.border, space: 1, thickness: 1),
   );
+}
+
+/// Page transition: the new page fades in while rising 24px; the old page dims slightly.
+/// Respects the OS "reduce motion" setting.
+class ZaadPageTransitionsBuilder extends PageTransitionsBuilder {
+  const ZaadPageTransitionsBuilder();
+  @override
+  Widget buildTransitions<T>(PageRoute<T> route, BuildContext context, Animation<double> animation, Animation<double> secondaryAnimation, Widget child) {
+    if (MediaQuery.maybeOf(context)?.disableAnimations ?? false) return child;
+    final enter = CurvedAnimation(parent: animation, curve: ZaadMotion.curve, reverseCurve: Curves.easeInCubic);
+    final exit = CurvedAnimation(parent: secondaryAnimation, curve: ZaadMotion.curve);
+    return FadeTransition(
+      opacity: Tween(begin: 1.0, end: 0.92).animate(exit),
+      child: FadeTransition(
+        opacity: enter,
+        child: AnimatedBuilder(
+          animation: enter,
+          builder: (_, c) => Transform.translate(offset: Offset(0, 24 * (1 - enter.value)), child: c),
+          child: ColoredBox(color: ZaadColors.background, child: child),
+        ),
+      ),
+    );
+  }
 }
