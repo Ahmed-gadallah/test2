@@ -43,6 +43,10 @@ void main() {
     tester.view.physicalSize = const Size(1170, 2532);
     tester.view.devicePixelRatio = 3;
     addTearDown(tester.view.reset);
+    // Run with the OS "reduce motion" setting: the welcome illustration and the loyalty card art
+    // float continuously by design, which would keep pumpAndSettle from ever settling.
+    tester.platformDispatcher.accessibilityFeaturesTestValue = const FakeAccessibilityFeatures(disableAnimations: true);
+    addTearDown(tester.platformDispatcher.clearAccessibilityFeaturesTestValue);
     final prefs = await SharedPreferences.getInstance();
     // Builds now default to the real API; these flows run on the in-app demo data source.
     await tester.pumpWidget(ProviderScope(overrides: [prefsProvider.overrideWithValue(prefs), apiProvider.overrideWithValue(DemoZaadApi())], child: const ZaadApp()));

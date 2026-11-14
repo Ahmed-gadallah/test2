@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import '../../core/theme.dart';
 import '../../state/providers.dart';
 import '../../widgets/common.dart';
+import '../../widgets/illustrations.dart';
 import '../../widgets/loyalty_illustration.dart';
 import '../../widgets/ui_kit.dart';
 
@@ -20,7 +21,7 @@ class WelcomeScreen extends ConsumerWidget {
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle.light,
       child: Scaffold(
-        backgroundColor: ZaadColors.welcomeDeep,
+        backgroundColor: ZaadColors.welcomeNavy,
         body: Stack(
           children: [
             const Positioned.fill(child: _Backdrop()),
@@ -31,7 +32,7 @@ class WelcomeScreen extends ConsumerWidget {
                   final h = c.maxHeight;
                   final compact = h < 800;
                   final tiny = h < 700;
-                  final logo = tiny ? 92.0 : (compact ? 132.0 : 168.0);
+                  final logo = tiny ? 92.0 : (compact ? 124.0 : 156.0);
                   final width = c.maxWidth.clamp(0.0, 480.0);
                   return Center(
                     child: SizedBox(
@@ -43,74 +44,46 @@ class WelcomeScreen extends ConsumerWidget {
                             padding: const EdgeInsets.fromLTRB(20, 10, 20, 0),
                             child: Align(
                               alignment: AlignmentDirectional.centerStart,
-                              child: _LanguagePill(),
+                              child: _Entrance(delay: 0, child: _LanguagePill()),
                             ),
                           ),
-                          SizedBox(height: tiny ? 0 : 12),
-                          _Entrance(delay: 0, child: _LogoBadge(size: logo)),
-                          SizedBox(height: tiny ? 12 : 22),
-                          _Entrance(
-                            delay: 120,
-                            child: Padding(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 28,
-                              ),
-                              child: Column(
-                                children: [
-                                  Text(
-                                    // Break after ".." as in the design; the copy itself is unchanged.
-                                    t.welcomeTitle.replaceFirst('.. ', '..\n'),
-                                    textAlign: TextAlign.center,
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: tiny ? 21 : (compact ? 25 : 29),
-                                      fontWeight: FontWeight.w700,
-                                      height: 1.45,
-                                    ),
-                                  ),
-                                  SizedBox(height: tiny ? 6 : 10),
-                                  Text(
-                                    t.welcomeSubtitle,
-                                    textAlign: TextAlign.center,
-                                    style: TextStyle(
-                                      color: ZaadColors.onBlueMuted,
-                                      fontSize: tiny ? 13.5 : 15,
-                                      height: 1.6,
-                                    ),
-                                  ),
-                                  SizedBox(height: tiny ? 6 : 16),
-                                  if (!tiny) const _Divider(),
-                                ],
-                              ),
+                          SizedBox(height: tiny ? 0 : 8),
+                          _Entrance(delay: 60, scaleFrom: 0.85, child: _LogoBadge(size: logo)),
+                          SizedBox(height: tiny ? 10 : 18),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 26),
+                            child: _Headline(
+                              title: t.welcomeTitle,
+                              subtitle: t.welcomeSubtitle,
+                              tiny: tiny,
+                              compact: compact,
                             ),
                           ),
                           // Illustration takes whatever height is left, never overlapping the buttons.
                           Expanded(
                             child: LayoutBuilder(
                               builder: (context, box) {
-                                final w =
-                                    (box.maxHeight * loyaltyIllustrationAspect)
-                                        .clamp(0.0, width - 40)
-                                        .toDouble();
+                                final w = (box.maxHeight * loyaltyIllustrationAspect)
+                                    .clamp(0.0, width - 40)
+                                    .toDouble();
                                 if (w < 110) return const SizedBox.shrink(); // only on extremely short screens
                                 return Center(
                                   child: _Entrance(
-                                    delay: 240,
-                                    child: LoyaltyIllustration(width: w),
+                                    delay: 380,
+                                    child: Floating(
+                                      amplitude: 5,
+                                      period: const Duration(milliseconds: 4200),
+                                      child: LoyaltyIllustration(width: w),
+                                    ),
                                   ),
                                 );
                               },
                             ),
                           ),
                           _Entrance(
-                            delay: 320,
+                            delay: 460,
                             child: Padding(
-                              padding: EdgeInsets.fromLTRB(
-                                22,
-                                tiny ? 4 : 14,
-                                22,
-                                tiny ? 8 : 12,
-                              ),
+                              padding: EdgeInsets.fromLTRB(22, tiny ? 4 : 12, 22, tiny ? 8 : 14),
                               child: Column(
                                 children: [
                                   _WelcomeButton(
@@ -142,86 +115,299 @@ class WelcomeScreen extends ConsumerWidget {
   }
 }
 
-/// Deep-blue gradient, soft edge circles, and a light "floor" curve behind the illustration base and buttons.
+/// Headline in two tones: the first sentence in white, the closing phrase ("all in one place!" /
+/// "كلها في مكان واحد!") in the accent yellow with a hand-drawn underline. The copy itself is the
+/// existing localized string; it is only split at its ".." for presentation.
+class _Headline extends StatelessWidget {
+  final String title;
+  final String subtitle;
+  final bool tiny;
+  final bool compact;
+  const _Headline({required this.title, required this.subtitle, required this.tiny, required this.compact});
+
+  @override
+  Widget build(BuildContext context) {
+    final i = title.indexOf('..');
+    final first = i < 0 ? title : title.substring(0, i + 2).trim();
+    final second = i < 0 ? '' : title.substring(i + 2).trim();
+    final size = tiny ? 21.0 : (compact ? 25.0 : 29.0);
+    final base = TextStyle(color: Colors.white, fontSize: size, fontWeight: FontWeight.w800, height: 1.35);
+    return Column(
+      children: [
+        _Entrance(delay: 160, child: Text(first, textAlign: TextAlign.center, style: base)),
+        if (second.isNotEmpty)
+          _Entrance(
+            delay: 240,
+            child: Padding(
+              padding: EdgeInsets.only(top: tiny ? 0 : 2),
+              child: CustomPaint(
+                // Yellow swoosh under the highlighted phrase.
+                foregroundPainter: _SwooshPainter(),
+                child: Padding(
+                  padding: EdgeInsets.only(bottom: tiny ? 9 : 14),
+                  child: Text(
+                    second,
+                    textAlign: TextAlign.center,
+                    style: base.copyWith(
+                      color: ZaadColors.welcomeYellow,
+                      fontSize: size + 3,
+                      shadows: [Shadow(color: ZaadColors.welcomeNavy.withValues(alpha: 0.35), blurRadius: 12)],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        SizedBox(height: tiny ? 4 : 10),
+        _Entrance(
+          delay: 320,
+          child: Text(
+            subtitle,
+            textAlign: TextAlign.center,
+            style: TextStyle(color: Colors.white.withValues(alpha: 0.9), fontSize: tiny ? 13.5 : 15.5, height: 1.6),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _SwooshPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final w = size.width, h = size.height;
+    final path = Path()
+      ..moveTo(w * 0.22, h - 2)
+      ..quadraticBezierTo(w * 0.5, h - 10, w * 0.8, h - 5);
+    canvas.drawPath(
+      path,
+      Paint()
+        ..color = ZaadColors.welcomeYellow
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 4
+        ..strokeCap = StrokeCap.round,
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
+
+/// Layered background: navy → royal gradient, flowing translucent waves, dot patterns, a yellow
+/// crescent at the top corner, and a light floor with a yellow edge behind the illustration and
+/// buttons, so the screen never reads as one flat blue block.
 class _Backdrop extends StatelessWidget {
   const _Backdrop();
   @override
   Widget build(BuildContext context) {
+    // Decorations sit on the end side (opposite the language pill), so mirror them in RTL.
+    final rtl = Directionality.of(context) == TextDirection.rtl;
     return LayoutBuilder(
       builder: (context, c) {
         final w = c.maxWidth, h = c.maxHeight;
-        Widget circle(
-          double size,
-          double alpha, {
-          Color color = Colors.white,
-        }) => Container(
+        final stack = Stack(
+          children: [
+            const Positioned.fill(
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [ZaadColors.welcomeRoyal, Color(0xFF0D2A9E), ZaadColors.welcomeNavy],
+                    stops: [0, 0.5, 1],
+                    begin: Alignment.topRight,
+                    end: Alignment.bottomLeft,
+                  ),
+                ),
+              ),
+            ),
+            // Soft electric light from the upper start and a glow behind the logo.
+            Positioned(
+              top: -w * 0.35,
+              left: -w * 0.35,
+              child: _Glow(size: w * 1.1, color: ZaadColors.welcomeElectric, alpha: 0.35),
+            ),
+            Positioned(
+              top: h * 0.02,
+              left: w * 0.15,
+              child: _Glow(size: w * 0.7, color: ZaadColors.welcomeSky, alpha: 0.18),
+            ),
+            // Flowing waves (one drifts very slowly).
+            Positioned.fill(child: CustomPaint(painter: _WavesPainter())),
+            Positioned.fill(
+              child: Floating(
+                amplitude: 6,
+                period: const Duration(seconds: 9),
+                child: CustomPaint(painter: _DriftWavePainter()),
+              ),
+            ),
+            // Dot patterns.
+            Positioned(top: h * 0.14, right: w * 0.05, child: const _Dots(rows: 3, cols: 5)),
+            Positioned(top: h * 0.5, left: w * 0.05, child: const _Dots(rows: 3, cols: 4, alpha: 0.18)),
+            // Light floor with a yellow accent edge.
+            Positioned.fill(child: CustomPaint(painter: _FloorPainter())),
+          ],
+        );
+        return rtl ? Transform.flip(flipX: true, child: stack) : stack;
+      },
+    );
+  }
+}
+
+class _Glow extends StatelessWidget {
+  final double size;
+  final Color color;
+  final double alpha;
+  const _Glow({required this.size, required this.color, required this.alpha});
+  @override
+  Widget build(BuildContext context) => IgnorePointer(
+        child: Container(
           width: size,
           height: size,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            color: color.withValues(alpha: alpha),
+            gradient: RadialGradient(colors: [color.withValues(alpha: alpha), color.withValues(alpha: 0)]),
           ),
-        );
-        return Stack(
-          children: [
-            Container(
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    ZaadColors.welcomeBright,
-                    ZaadColors.primary,
-                    ZaadColors.welcomeDeep,
-                  ],
-                  stops: [0, 0.45, 1],
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                ),
-              ),
-            ),
-            Positioned(
-              top: -w * 0.32,
-              right: -w * 0.30,
-              child: circle(w * 0.85, 0.07),
-            ),
-            Positioned(
-              top: h * 0.22,
-              left: -w * 0.42,
-              child: circle(w * 0.72, 0.05),
-            ),
-            Positioned(
-              top: h * 0.50,
-              right: -w * 0.38,
-              child: circle(w * 0.7, 0.06, color: ZaadColors.welcomeBright),
-            ),
-            // Light floor: a very wide ellipse whose top edge forms the curve seen behind the illustration.
-            Positioned(
-              left: -w * 0.45,
-              right: -w * 0.45,
-              bottom: -h * 0.18,
-              height: h * 0.52,
-              child: Container(
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.all(
-                    Radius.elliptical(w * 1.9, h * 0.52),
+        ),
+      );
+}
+
+class _Dots extends StatelessWidget {
+  final int rows, cols;
+  final double alpha;
+  const _Dots({required this.rows, required this.cols, this.alpha = 0.28});
+  @override
+  Widget build(BuildContext context) => IgnorePointer(
+        child: Column(children: [
+          for (var r = 0; r < rows; r++)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 9),
+              child: Row(mainAxisSize: MainAxisSize.min, children: [
+                for (var c = 0; c < cols; c++)
+                  Container(
+                    width: 5,
+                    height: 5,
+                    margin: const EdgeInsets.only(right: 9),
+                    decoration: BoxDecoration(shape: BoxShape.circle, color: ZaadColors.welcomeSky.withValues(alpha: alpha * 1.8)),
                   ),
-                  gradient: const LinearGradient(
-                    colors: [
-                      Color(0xFFC9CFFF),
-                      ZaadColors.welcomeLight,
-                      Colors.white,
-                    ],
-                    stops: [0, 0.35, 1],
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                  ),
-                ),
-              ),
+              ]),
             ),
-          ],
-        );
-      },
+        ]),
+      );
+}
+
+/// Large translucent curves across the blue area and the yellow crescent in the top corner.
+class _WavesPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size s) {
+    final w = s.width, h = s.height;
+    // Upper wave band (lighter royal).
+    canvas.drawPath(
+      Path()
+        ..moveTo(0, h * 0.2)
+        ..cubicTo(w * 0.3, h * 0.12, w * 0.55, h * 0.3, w, h * 0.22)
+        ..lineTo(w, h * 0.42)
+        ..cubicTo(w * 0.62, h * 0.5, w * 0.35, h * 0.34, 0, h * 0.44)
+        ..close(),
+      Paint()
+        ..shader = LinearGradient(
+          colors: [ZaadColors.welcomeElectric.withValues(alpha: 0.20), ZaadColors.welcomeRoyal.withValues(alpha: 0.05)],
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+        ).createShader(Offset.zero & s),
+    );
+    // Yellow crescent at the top corner (accent that breaks the blue).
+    final c = Offset(w * 1.02, -h * 0.03);
+    final r = w * 0.36;
+    canvas.drawArc(
+      Rect.fromCircle(center: c, radius: r),
+      1.55,
+      1.35,
+      false,
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = w * 0.035
+        ..strokeCap = StrokeCap.round
+        ..shader = const LinearGradient(colors: [Color(0xFFFFE07A), ZaadColors.welcomeYellow, Color(0xFFF2A900)])
+            .createShader(Rect.fromCircle(center: c, radius: r)),
+    );
+    // A thin second ring inside it.
+    canvas.drawArc(
+      Rect.fromCircle(center: c, radius: r * 0.8),
+      1.6,
+      1.25,
+      false,
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.5
+        ..color = Colors.white.withValues(alpha: 0.25),
     );
   }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
+
+/// A soft bright-blue wave on the end side that drifts slowly (Floating wrapper).
+class _DriftWavePainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size s) {
+    final w = s.width, h = s.height;
+    canvas.drawPath(
+      Path()
+        ..moveTo(w, h * 0.38)
+        ..cubicTo(w * 0.75, h * 0.42, w * 0.7, h * 0.58, w * 0.42, h * 0.6)
+        ..lineTo(w, h * 0.72)
+        ..close(),
+      Paint()..color = ZaadColors.welcomeSky.withValues(alpha: 0.16),
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
+
+/// The light floor: a wave-topped white → soft-gray area in the lower part, with a yellow accent
+/// curve running along its start side and a soft shadow above its edge.
+class _FloorPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size s) {
+    final w = s.width, h = s.height;
+    final top = h * 0.66;
+    Path edge() => Path()
+      ..moveTo(-10, top + h * 0.04)
+      ..cubicTo(w * 0.25, top - h * 0.05, w * 0.6, top + h * 0.05, w + 10, top - h * 0.04);
+    final floor = edge()
+      ..lineTo(w + 10, h)
+      ..lineTo(-10, h)
+      ..close();
+    // Depth: a soft navy shadow along the edge.
+    canvas.drawPath(floor.shift(const Offset(0, -6)), Paint()
+      ..color = ZaadColors.welcomeNavy.withValues(alpha: 0.35)
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 14));
+    canvas.drawPath(
+      floor,
+      Paint()
+        ..shader = const LinearGradient(
+          colors: [Color(0xFFDDE6FF), ZaadColors.welcomeFloor, Colors.white],
+          stops: [0, 0.3, 1],
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+        ).createShader(Rect.fromLTWH(0, top - h * 0.05, w, h - top + h * 0.05)),
+    );
+    // Yellow accent curve just above the floor on the start (left) side.
+    canvas.drawPath(
+      Path()
+        ..moveTo(-10, top + h * 0.02)
+        ..cubicTo(w * 0.12, top - h * 0.035, w * 0.28, top - h * 0.03, w * 0.42, top - h * 0.012),
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 7
+        ..strokeCap = StrokeCap.round
+        ..color = ZaadColors.welcomeYellow,
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
 
 /// 🌐 Current language ⌄ — opens a menu; selection uses the existing localeProvider (persisted).
@@ -245,29 +431,26 @@ class _LanguagePill extends ConsumerWidget {
                 Expanded(
                   child: Text(
                     e.value,
-                    style: TextStyle(
-                      fontWeight: e.key == lang
-                          ? FontWeight.w700
-                          : FontWeight.w500,
-                    ),
+                    style: TextStyle(fontWeight: e.key == lang ? FontWeight.w700 : FontWeight.w500),
                   ),
                 ),
-                if (e.key == lang)
-                  const Icon(
-                    Icons.check_rounded,
-                    color: ZaadColors.primary,
-                    size: 20,
-                  ),
+                if (e.key == lang) const Icon(Icons.check_rounded, color: ZaadColors.primary, size: 20),
               ],
             ),
           ),
       ],
+      // Glass pill: translucent fill, light top edge, soft shadow.
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 9),
         decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.12),
+          gradient: LinearGradient(
+            colors: [Colors.white.withValues(alpha: 0.22), Colors.white.withValues(alpha: 0.08)],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+          ),
           borderRadius: BorderRadius.circular(30),
-          border: Border.all(color: Colors.white.withValues(alpha: 0.35)),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.38)),
+          boxShadow: [BoxShadow(color: ZaadColors.welcomeNavy.withValues(alpha: 0.25), blurRadius: 16, offset: const Offset(0, 6))],
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
@@ -276,18 +459,10 @@ class _LanguagePill extends ConsumerWidget {
             const SizedBox(width: 8),
             Text(
               names[lang] ?? lang,
-              style: const TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.w600,
-                fontSize: 15,
-              ),
+              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 15),
             ),
             const SizedBox(width: 4),
-            const Icon(
-              Icons.keyboard_arrow_down_rounded,
-              color: Colors.white,
-              size: 20,
-            ),
+            const Icon(Icons.keyboard_arrow_down_rounded, color: Colors.white, size: 20),
           ],
         ),
       ),
@@ -295,43 +470,38 @@ class _LanguagePill extends ConsumerWidget {
   }
 }
 
-/// Official logo (unchanged asset) on a deep-blue disc with two faint rings and a soft glow.
+/// Official logo (unchanged asset) on a deep disc with two faint rings and a soft electric glow.
 class _LogoBadge extends StatelessWidget {
   final double size;
   const _LogoBadge({required this.size});
   @override
   Widget build(BuildContext context) {
     Widget ring(double d, double a) => Container(
-      width: d,
-      height: d,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        border: Border.all(
-          color: Colors.white.withValues(alpha: a),
-          width: 1.2,
-        ),
-      ),
-    );
+          width: d,
+          height: d,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            border: Border.all(color: Colors.white.withValues(alpha: a), width: 1.2),
+          ),
+        );
     return SizedBox(
-      width: size * 1.32,
-      height: size * 1.32,
+      width: size * 1.34,
+      height: size * 1.34,
       child: Stack(
         alignment: Alignment.center,
         children: [
-          ring(size * 1.32, 0.08),
-          ring(size * 1.16, 0.14),
+          _Glow(size: size * 1.6, color: ZaadColors.welcomeSky, alpha: 0.35),
+          ring(size * 1.34, 0.10),
+          ring(size * 1.17, 0.18),
           Container(
             width: size,
             height: size,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: ZaadColors.welcomeDeep,
+              color: ZaadColors.welcomeNavy,
+              border: Border.all(color: Colors.white.withValues(alpha: 0.5), width: 1.5),
               boxShadow: [
-                BoxShadow(
-                  color: ZaadColors.welcomeBright.withValues(alpha: 0.55),
-                  blurRadius: 36,
-                  spreadRadius: 2,
-                ),
+                BoxShadow(color: ZaadColors.welcomeElectric.withValues(alpha: 0.55), blurRadius: 34, spreadRadius: 2),
               ],
             ),
             padding: EdgeInsets.all(size * 0.035),
@@ -343,68 +513,47 @@ class _LogoBadge extends StatelessWidget {
   }
 }
 
-class _Divider extends StatelessWidget {
-  const _Divider();
-  @override
-  Widget build(BuildContext context) {
-    final line = Container(
-      width: 64,
-      height: 1.2,
-      color: Colors.white.withValues(alpha: 0.3),
-    );
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        line,
-        Container(
-          margin: const EdgeInsets.symmetric(horizontal: 8),
-          width: 6,
-          height: 6,
-          decoration: const BoxDecoration(
-            color: Colors.white70,
-            shape: BoxShape.circle,
-          ),
-        ),
-        line,
-      ],
-    );
-  }
-}
-
 class _WelcomeButton extends StatelessWidget {
   final String label;
   final bool primary;
   final VoidCallback onTap;
-  const _WelcomeButton({
-    required this.label,
-    required this.primary,
-    required this.onTap,
-  });
+  const _WelcomeButton({required this.label, required this.primary, required this.onTap});
   @override
   Widget build(BuildContext context) {
-    final r = BorderRadius.circular(20);
+    final r = BorderRadius.circular(22);
+    // "Create account": white with royal text. "Log in": royal → navy gradient with a blue glow.
+    final deco = BoxDecoration(
+      borderRadius: r,
+      color: primary ? Colors.white : null,
+      gradient: primary
+          ? null
+          : const LinearGradient(
+              colors: [ZaadColors.welcomeElectric, ZaadColors.welcomeRoyal, ZaadColors.welcomeNavy],
+              stops: [0, 0.45, 1],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+      border: primary ? Border.all(color: const Color(0xFFE3E9FF)) : Border.all(color: Colors.white.withValues(alpha: 0.18)),
+      boxShadow: [
+        BoxShadow(
+          color: primary ? ZaadColors.welcomeNavy.withValues(alpha: 0.12) : ZaadColors.welcomeElectric.withValues(alpha: 0.45),
+          blurRadius: primary ? 18 : 22,
+          offset: const Offset(0, 8),
+        ),
+      ],
+    );
     return Pressable(
       onTap: onTap,
       borderRadius: r,
       semanticLabel: label,
-      decoration: BoxDecoration(
-        borderRadius: r,
-        color: primary ? Colors.white : null,
-        gradient: primary
-            ? null
-            : const LinearGradient(
-                colors: [ZaadColors.welcomeBright, ZaadColors.primary],
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-              ),
-        border: primary ? null : Border.all(color: Colors.white, width: 1.6),
+      decoration: deco,
+      // Pressed: shadow tightens as the button scales down (Pressable).
+      pressedDecoration: deco.copyWith(
         boxShadow: [
           BoxShadow(
-            color: ZaadColors.welcomeDeep.withValues(
-              alpha: primary ? 0.18 : 0.32,
-            ),
-            blurRadius: 18,
-            offset: const Offset(0, 8),
+            color: primary ? ZaadColors.welcomeNavy.withValues(alpha: 0.10) : ZaadColors.welcomeElectric.withValues(alpha: 0.30),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
@@ -414,9 +563,9 @@ class _WelcomeButton extends StatelessWidget {
           child: Text(
             label,
             style: TextStyle(
-              color: primary ? ZaadColors.primary : Colors.white,
-              fontSize: 17,
-              fontWeight: FontWeight.w700,
+              color: primary ? ZaadColors.welcomeRoyal : Colors.white,
+              fontSize: 17.5,
+              fontWeight: FontWeight.w800,
             ),
           ),
         ),
@@ -429,11 +578,12 @@ class _WelcomeButton extends StatelessWidget {
 class _Entrance extends StatelessWidget {
   final Widget child;
   final int delay;
-  const _Entrance({required this.child, required this.delay});
+  final double scaleFrom;
+  const _Entrance({required this.child, required this.delay, this.scaleFrom = 0.96});
   @override
   Widget build(BuildContext context) {
     if (MediaQuery.of(context).disableAnimations) return child;
-    final total = 520 + delay;
+    final total = 560 + delay;
     return TweenAnimationBuilder<double>(
       tween: Tween(begin: 0, end: 1),
       duration: Duration(milliseconds: total),
@@ -442,7 +592,7 @@ class _Entrance extends StatelessWidget {
         opacity: v,
         child: Transform.translate(
           offset: Offset(0, (1 - v) * 18),
-          child: Transform.scale(scale: 0.96 + 0.04 * v, child: c),
+          child: Transform.scale(scale: scaleFrom + (1 - scaleFrom) * v, child: c),
         ),
       ),
       child: child,

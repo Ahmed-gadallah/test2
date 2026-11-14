@@ -15,6 +15,14 @@ class ZaadColors {
   static const welcomeBright = Color(0xFF3038F5);
   static const welcomeLight = Color(0xFFE9ECFF);
   static const onBlueMuted = Color(0xFFD9DCFF);
+  // Welcome screen v2 (reference): navy → royal background, electric/bright highlights,
+  // light-gray floor and a yellow accent that breaks the blue.
+  static const welcomeNavy = Color(0xFF061B70);
+  static const welcomeRoyal = Color(0xFF123CCB);
+  static const welcomeElectric = Color(0xFF1677FF);
+  static const welcomeSky = Color(0xFF299BFF);
+  static const welcomeFloor = Color(0xFFF3F6FF);
+  static const welcomeYellow = Color(0xFFFFC928);
   static const background = Color(0xFFF5F6FC);
   static const surface = Colors.white;
   static const text = Color(0xFF191B32);
